@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+server/node_modules/
+
+# Android build outputs
+android/app/build/
+android/.gradle/
+android/build/
+android/captures/
+*.apk
+*.aab
+
+# iOS
+ios/Pods/
+ios/build/
+
+# React Native
+.expo/
+dist/
+android/app/src/main/assets/index.android.bundle
+android/app/src/main/res/drawable-*/
+android/app/src/main/res/raw/
+
+# Environment
+.env
+.env.local
+server/.env
+
+# Logs
+*.log
+nohup.out
+
+# Editor
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
