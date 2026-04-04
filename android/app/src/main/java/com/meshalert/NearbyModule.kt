@@ -78,9 +78,11 @@ class NearbyModule(private val reactContext: ReactApplicationContext) :
     fun start(deviceName: String, promise: Promise) {
         val advOptions = AdvertisingOptions.Builder()
             .setStrategy(Strategy.P2P_CLUSTER)
+            .setLowPower(false)   // prefer WiFi Direct (~200m) over BLE (~5m)
             .build()
         val discOptions = DiscoveryOptions.Builder()
             .setStrategy(Strategy.P2P_CLUSTER)
+            .setLowPower(false)
             .build()
 
         var resolved = false

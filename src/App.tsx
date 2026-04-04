@@ -61,9 +61,7 @@ export default function App(): React.JSX.Element {
             },
             tabBarActiveTintColor: COLORS.sos,
             tabBarInactiveTintColor: COLORS.textMuted,
-            headerStyle: { backgroundColor: COLORS.surface, borderBottomColor: COLORS.border, borderBottomWidth: 1 },
-            headerTintColor: COLORS.text,
-            headerTitleStyle: { fontWeight: '800' },
+            headerShown: false,
           }}
         >
           <Tab.Screen
