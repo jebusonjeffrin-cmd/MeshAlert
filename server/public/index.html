@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MeshAlert Dashboard</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #0a0a0f; color: #e2e8f0; font-family: system-ui, sans-serif; min-height: 100vh; }
@@ -16,6 +18,9 @@
   .stat { background: #111118; border: 1px solid #1e293b; border-radius: 10px; padding: 16px; text-align: center; }
   .stat .val { font-size: 28px; font-weight: 800; }
   .stat .lbl { font-size: 12px; color: #64748b; margin-top: 4px; }
+  .section { padding: 0 24px 16px; }
+  .section h2 { font-size: 14px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  #map { height: 320px; border-radius: 10px; border: 1px solid #1e293b; background: #111118; }
   .feed { padding: 0 24px 24px; }
   .feed h2 { font-size: 14px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
   .card { background: #111118; border: 1px solid #1e293b; border-radius: 10px; padding: 16px; margin-bottom: 10px; border-left: 4px solid #1e293b; }
@@ -39,6 +44,12 @@
   .empty p { font-size: 14px; }
   .badge { font-size: 11px; background: rgba(59,130,246,0.15); color: #93c5fd; padding: 2px 8px; border-radius: 10px; }
   #conn-status { font-size: 12px; color: #64748b; margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .btn-delete { background: none; border: 1px solid #374151; color: #94a3b8; font-size: 11px; padding: 3px 8px; border-radius: 6px; cursor: pointer; margin-left: 8px; }
+  .btn-delete:hover { border-color: #dc2626; color: #dc2626; }
+  /* Leaflet dark overrides */
+  .leaflet-popup-content-wrapper { background: #1c2128; color: #e6edf3; border: 1px solid #30363d; border-radius: 8px; }
+  .leaflet-popup-tip { background: #1c2128; }
+  .leaflet-popup-content b { color: #ff3b30; }
 </style>
 </head>
 <body>
@@ -58,6 +69,11 @@
   <div class="stat"><div class="val" id="s-safe" style="color:#16a34a">0</div><div class="lbl">Safe</div></div>
 </div>
 
+<div class="section">
+  <h2>Live Map</h2>
+  <div id="map"></div>
+</div>
+
 <div class="feed">
   <h2>Live Feed</h2>
   <div id="feed"></div>
@@ -65,7 +81,54 @@
 
 <script>
   let messages = [];
+  const markers = {};
 
+  // ── Map ──────────────────────────────────────────────────────────────────────
+  const map = L.map('map', { attributionControl: false, zoomControl: true })
+    .setView([20, 0], 2);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, opacity: 0.85,
+  }).addTo(map);
+
+  const legend = L.control({ position: 'bottomright' });
+  legend.onAdd = () => {
+    const d = L.DomUtil.create('div');
+    d.style.cssText = 'background:#1c2128;padding:8px 12px;border-radius:8px;border:1px solid #30363d;font-size:11px;color:#8b949e;line-height:1.8';
+    d.innerHTML = '<span style="color:#dc2626">●</span> Medical &nbsp; <span style="color:#f97316">●</span> Trapped &nbsp; <span style="color:#16a34a">●</span> Safe';
+    return d;
+  };
+  legend.addTo(map);
+
+  function markerColor(type) {
+    if (type === 'MEDICAL') return '#dc2626';
+    if (type === 'TRAPPED') return '#f97316';
+    if (type === 'SAFE')    return '#16a34a';
+    return '#3b82f6';
+  }
+
+  function addMapMarker(msg) {
+    const lat = msg.payload?.latitude;
+    const lng = msg.payload?.longitude;
+    if (lat == null || lng == null) return;
+    if (markers[msg.messageId]) return;
+    const color = markerColor(msg.emergencyType ?? msg.type);
+    const time = new Date(msg.timestamp).toLocaleTimeString();
+    const popup = `<b>${msg.emergencyType ?? msg.type}</b><br>${msg.senderName ?? 'Unknown'}<br>${msg.payload?.bloodGroup ? '🩸 ' + msg.payload.bloodGroup + '<br>' : ''}${msg.payload?.message ? '"' + msg.payload.message + '"<br>' : ''}${time}`;
+    const m = L.circleMarker([lat, lng], { radius: 12, color, fillColor: color, fillOpacity: 0.85, weight: 3 })
+      .bindPopup(popup)
+      .addTo(map);
+    markers[msg.messageId] = m;
+  }
+
+  function removeMapMarker(messageId) {
+    if (markers[messageId]) {
+      map.removeLayer(markers[messageId]);
+      delete markers[messageId];
+    }
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
   function fmtAge(ts) {
     const s = Math.floor((Date.now() - ts) / 1000);
     if (s < 60) return s + 's ago';
@@ -80,10 +143,13 @@
     const lat = msg.payload?.latitude?.toFixed(5);
     const lng = msg.payload?.longitude?.toFixed(5);
     return `
-      <div class="card ${type}">
+      <div class="card ${type}" id="card-${msg.messageId}">
         <div class="card-header">
           <span class="card-type ${type}">${type === 'HEARTBEAT' ? '💓 HEARTBEAT' : '🆘 ' + type}</span>
-          <span class="card-age">${age}</span>
+          <span style="display:flex;align-items:center">
+            <span class="card-age">${age}</span>
+            <button class="btn-delete" onclick="deleteAlert('${msg.messageId}')">🗑 Delete</button>
+          </span>
         </div>
         <div class="card-sender">${msg.senderName ?? 'Unknown'} <span class="badge">${(msg.senderId ?? '').slice(-6)}</span></div>
         ${lat ? `<div class="card-coords">📍 ${lat}, ${lng}</div>` : ''}
@@ -110,6 +176,26 @@
     feed.innerHTML = messages.map(renderCard).join('');
   }
 
+  function panToLatestSOS() {
+    const sos = messages.find(m => m.payload?.latitude != null);
+    if (sos) map.setView([sos.payload.latitude, sos.payload.longitude], 13);
+  }
+
+  async function deleteAlert(messageId) {
+    if (!confirm('Delete this SOS alert from the dashboard?')) return;
+    try {
+      const res = await fetch('/api/sos/' + messageId, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Server error');
+      messages = messages.filter(m => m.messageId !== messageId);
+      removeMapMarker(messageId);
+      updateStats();
+      renderFeed();
+    } catch (e) {
+      alert('Delete failed: ' + e.message);
+    }
+  }
+
+  // ── SSE ──────────────────────────────────────────────────────────────────────
   function connect() {
     const es = new EventSource('/api/events');
     const status = document.getElementById('conn-status');
@@ -117,28 +203,37 @@
 
     es.addEventListener('init', e => {
       messages = JSON.parse(e.data);
+      messages.forEach(addMapMarker);
+      panToLatestSOS();
       updateStats(); renderFeed();
       status.textContent = '⬤ Live';
       status.style.color = '#16a34a';
       dot.style.background = '#16a34a';
-      // Also fetch current tunnel URL
-      fetch('/api/tunnel-url').then(r=>r.json()).then(d=>{ if(d.url) showTunnelUrl(d.url); });
-    });
-
-    es.addEventListener('tunnel', e => {
-      const { url } = JSON.parse(e.data);
-      if (url) showTunnelUrl(url);
+      fetch('/api/health').then(r => r.json()).then(d => { if (d.tunnelUrl) showTunnelUrl(d.tunnelUrl); });
     });
 
     es.addEventListener('sos', e => {
       const msg = JSON.parse(e.data);
       if (!messages.find(m => m.messageId === msg.messageId)) {
         messages.unshift(msg);
+        addMapMarker(msg);
+        map.setView([msg.payload?.latitude ?? map.getCenter().lat, msg.payload?.longitude ?? map.getCenter().lng], 13);
         updateStats(); renderFeed();
-        // Flash dot
         dot.style.background = '#dc2626';
         setTimeout(() => dot.style.background = '#16a34a', 1000);
       }
+    });
+
+    es.addEventListener('delete', e => {
+      const { messageId } = JSON.parse(e.data);
+      messages = messages.filter(m => m.messageId !== messageId);
+      removeMapMarker(messageId);
+      updateStats(); renderFeed();
+    });
+
+    es.addEventListener('tunnel', e => {
+      const { url } = JSON.parse(e.data);
+      if (url) showTunnelUrl(url);
     });
 
     es.onerror = () => {

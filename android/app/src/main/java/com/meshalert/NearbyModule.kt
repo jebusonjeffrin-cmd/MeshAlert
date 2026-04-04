@@ -24,6 +24,7 @@ class NearbyModule(private val reactContext: ReactApplicationContext) :
         }
 
         override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
+            android.util.Log.d("NearbyModule", "ConnectionResult $endpointId: code=${result.status.statusCode} msg=${result.status.statusMessage} success=${result.status.isSuccess}")
             if (result.status.isSuccess) {
                 connected.add(endpointId)
                 emit("NearbyPeerConnected", Arguments.createMap().apply {
@@ -31,6 +32,8 @@ class NearbyModule(private val reactContext: ReactApplicationContext) :
                     putString("endpointName", endpointNames[endpointId] ?: endpointId.takeLast(8))
                     putInt("connectedCount", connected.size)
                 })
+            } else {
+                android.util.Log.w("NearbyModule", "Connection to $endpointId rejected: ${result.status.statusMessage}")
             }
         }
 
@@ -76,6 +79,9 @@ class NearbyModule(private val reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun start(deviceName: String, promise: Promise) {
+        // Default options → BLE transport.  Works fully offline (no WiFi/internet needed).
+        // setLowPower(false) triggers WiFi Aware (NAN) on Samsung Android 12+ which
+        // requires internet for cluster auth → causes 0 peers offline. Omit it.
         val advOptions = AdvertisingOptions.Builder()
             .setStrategy(Strategy.P2P_CLUSTER)
             .setLowPower(false)   // prefer WiFi Direct (~200m) over BLE (~5m)

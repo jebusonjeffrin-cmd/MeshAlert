@@ -59,6 +59,15 @@ async function isDuplicate(messageId) {
   return memStore.some(m => m.messageId === messageId);
 }
 
+async function deleteMessage(messageId) {
+  if (pool) {
+    await pool.query('DELETE FROM sos_messages WHERE message_id=$1', [messageId]);
+  } else {
+    const idx = memStore.findIndex(m => m.messageId === messageId);
+    if (idx !== -1) memStore.splice(idx, 1);
+  }
+}
+
 // ── SSH Tunnel (local dev only — Railway doesn't need this) ───────────────────
 let tunnelUrl = '';
 
@@ -127,6 +136,17 @@ app.post('/api/sos', async (req, res) => {
 app.get('/api/sos', async (req, res) => {
   try { res.json(await getAllMessages()); }
   catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/sos/:id', async (req, res) => {
+  try {
+    await deleteMessage(req.params.id);
+    broadcast('delete', { messageId: req.params.id });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[Delete] Error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.get('/api/events', async (req, res) => {
