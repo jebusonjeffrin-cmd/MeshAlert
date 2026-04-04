@@ -1,14 +1,11 @@
 /**
- * NearbyService — Google Nearby Connections API wrapper.
+ * NearbyService — Google Nearby Connections (BLE transport).
  *
- * Uses Strategy.P2P_CLUSTER: every device can connect to every other device
- * simultaneously (true mesh, not star topology).
+ * Strategy: P2P_CLUSTER with default (BLE) options.
+ * Works fully offline — only Bluetooth needs to be ON, no WiFi/internet needed.
+ * Range: ~30-50 m via BLE.
  *
- * Transport: Nearby Connections automatically picks the best available
- * transport — WiFi Direct (~200m), Hotspot, BLE (~50m), or Bluetooth Classic.
- * No internet required.
- *
- * Messages are full JSON — no 20-byte limit.
+ * WiFi range extension is handled separately by NearbyConnectionsModule (feature branch).
  */
 import { NativeEventEmitter, NativeModules } from 'react-native';
 import { MeshMessage, PeerDevice } from '../types';

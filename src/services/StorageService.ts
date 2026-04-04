@@ -136,6 +136,15 @@ class StorageService {
     } catch (e: any) { console.warn('[Storage] clearMessages error:', e?.message); }
   }
 
+  async deleteMessage(messageId: string): Promise<void> {
+    try {
+      const db = this.getDB();
+      await db.executeSql('DELETE FROM received_messages WHERE message_id=?;', [messageId]);
+      await db.executeSql('DELETE FROM pending_messages WHERE message_id=?;', [messageId]);
+      await db.executeSql('DELETE FROM seen_message_ids WHERE message_id=?;', [messageId]);
+    } catch (e: any) { console.warn('[Storage] deleteMessage error:', e?.message); }
+  }
+
   // ─── Seen IDs (dedup) ────────────────────────────────────────────────────────
 
   async saveSeenId(id: string): Promise<void> {
