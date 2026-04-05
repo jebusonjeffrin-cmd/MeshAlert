@@ -180,7 +180,13 @@ class WifiP2pModule(private val reactContext: ReactApplicationContext) :
         // 3. WiFi Direct — autonomous group (handles offline/no-AP case)
         p2pChannel?.let { launchP2pGroup(it) }
 
-        // 4. Periodic rediscovery
+        // 4. Explicit peer discovery — ensures WIFI_P2P_PEERS_CHANGED_ACTION fires even if
+        //    createGroup() succeeded (GO never calls discoverPeers otherwise on API 29+)
+        p2pChannel?.let { c ->
+            wm.discoverPeers(c, al { ok -> log("Initial discoverPeers: $ok") })
+        }
+
+        // 5. Periodic rediscovery
         scheduleRediscovery()
 
         promise.resolve(true)
@@ -270,6 +276,9 @@ class WifiP2pModule(private val reactContext: ReactApplicationContext) :
                 } else {
                     log("createGroup failed — group may already exist, trying to join")
                     joinKnownGroup()
+                    // Also run peer discovery so WIFI_P2P_PEERS_CHANGED_ACTION fires
+                    // and connectP2p() can establish connection if WifiNetworkSpecifier fails
+                    p2pChannel?.let { ch -> wm.discoverPeers(ch, al { ok2 -> log("discoverPeers alongside WNS: $ok2") }) }
                 }
             })
         } else {
@@ -423,7 +432,11 @@ class WifiP2pModule(private val reactContext: ReactApplicationContext) :
                         tcpSockets.add(client)
                         log("TCP accepted: $ip  (peers: ${tcpSockets.count { !it.isClosed }})")
                         emitConnected(ip)
-                        exec.submit { readLoop(client) }
+                        exec.submit {
+                            // Send our name first so the peer can identify us
+                            try { client.getOutputStream().write("HELLO:$myName\n".toByteArray()); client.getOutputStream().flush() } catch (_: Exception) {}
+                            readLoop(client)
+                        }
                     } else {
                         silentClose(client)  // duplicate
                     }
@@ -446,6 +459,8 @@ class WifiP2pModule(private val reactContext: ReactApplicationContext) :
                     s.connect(InetSocketAddress(ip, PORT), 4000)
                     tcpSockets.add(s)
                     log("TCP connected to $ip (attempt ${attempt + 1})")
+                    // Send our name so the GO can identify us
+                    try { s.getOutputStream().write("HELLO:$myName\n".toByteArray()); s.getOutputStream().flush() } catch (_: Exception) {}
                     emitConnected(ip)
                     readLoop(s)
                     return@submit
@@ -469,6 +484,19 @@ class WifiP2pModule(private val reactContext: ReactApplicationContext) :
             var line: String?
             while (reader.readLine().also { line = it } != null) {
                 val msg = line ?: continue
+                // HELLO handshake — peer sends its real device name on connect
+                if (msg.startsWith("HELLO:")) {
+                    val peerName = msg.removePrefix("HELLO:")
+                    log("TCP peer name: $peerName from $ip")
+                    // Re-emit NearbyPeerConnected with real name so JS dedup can
+                    // collapse BLE + WiFi entries for the same physical device
+                    emit("NearbyPeerConnected", Arguments.createMap().apply {
+                        putString("endpointId",   ip)
+                        putString("endpointName", peerName)
+                        putInt("connectedCount",  tcpSockets.count { !it.isClosed })
+                    })
+                    continue
+                }
                 // Relay to all OTHER connected sockets (hub topology)
                 tcpSockets.filter { it !== socket && !it.isClosed }.forEach { other ->
                     try { other.getOutputStream().apply { write((msg + "\n").toByteArray()); flush() } }
