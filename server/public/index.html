@@ -13,90 +13,77 @@
   --blue:   #1E88E5;
   --green:  #00C853;
   --orange: #FF8C00;
-  --bg:     #070B14;
-  --bg2:    #0D1420;
-  --bg3:    #111B2C;
-  --border: #1A2640;
-  --text:   #E8EDF5;
-  --muted:  #5B7A9D;
-  --dim:    #2A3D5A;
+  --bg:     #0F1623;
+  --bg2:    #162030;
+  --bg3:    #1C2B3E;
+  --border: #243347;
+  --text:   #DCE8F5;
+  --muted:  #6B8CAD;
+  --dim:    #2E4060;
 }
 
 html { scroll-behavior: smooth; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  overflow-x: hidden;
-}
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; overflow-x: hidden; }
 
 /* ── Navbar ── */
 nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 48px;
-  background: rgba(7,11,20,0.85);
+  padding: 16px 48px;
+  background: rgba(15,22,35,0.9);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
   transition: background 0.3s;
 }
 .nav-logo { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 900; color: var(--text); text-decoration: none; }
 .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red); animation: blink 2s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .nav-links { display: flex; align-items: center; gap: 32px; }
 .nav-links a { color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
 .nav-links a:hover { color: var(--text); }
 .nav-cta {
   background: var(--red); color: #fff; border: none; border-radius: 10px;
   padding: 10px 24px; font-size: 14px; font-weight: 700; cursor: pointer;
-  text-decoration: none; transition: all 0.2s; letter-spacing: 0.3px;
+  text-decoration: none; transition: all 0.2s;
 }
-.nav-cta:hover { background: var(--red2); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,59,48,0.35); }
+.nav-cta:hover { background: var(--red2); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,59,48,0.3); }
 
 /* ── Hero ── */
 .hero {
-  min-height: 100vh;
-  display: flex; align-items: center;
-  padding: 120px 48px 80px;
+  min-height: 100vh; display: flex; align-items: center;
+  padding: 120px 48px 80px; gap: 64px;
   position: relative; overflow: hidden;
 }
-.hero-glow {
-  position: absolute; top: -200px; right: -200px;
-  width: 700px; height: 700px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,59,48,0.08) 0%, transparent 70%);
+.hero::before {
+  content: ''; position: absolute; top: -200px; right: -150px;
+  width: 650px; height: 650px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,59,48,0.07) 0%, transparent 70%);
   pointer-events: none;
 }
-.hero-glow2 {
-  position: absolute; bottom: -100px; left: -100px;
-  width: 500px; height: 500px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(30,136,229,0.06) 0%, transparent 70%);
+.hero::after {
+  content: ''; position: absolute; bottom: -80px; left: -100px;
+  width: 450px; height: 450px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(30,136,229,0.05) 0%, transparent 70%);
   pointer-events: none;
 }
-.hero-content { max-width: 560px; z-index: 2; }
+.hero-content { max-width: 540px; z-index: 2; flex-shrink: 0; }
 .hero-badge {
   display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(255,59,48,0.1); border: 1px solid rgba(255,59,48,0.25);
-  border-radius: 100px; padding: 6px 14px; font-size: 12px; font-weight: 700;
-  color: var(--red2); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 24px;
+  background: rgba(255,59,48,0.1); border: 1px solid rgba(255,59,48,0.22);
+  border-radius: 100px; padding: 6px 14px; font-size: 11px; font-weight: 800;
+  color: var(--red2); letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 24px;
 }
 .hero-badge span { width: 6px; height: 6px; border-radius: 50%; background: var(--red); animation: blink 1.5s infinite; }
-h1 {
-  font-size: clamp(40px, 6vw, 68px); font-weight: 900; line-height: 1.08;
-  letter-spacing: -1.5px; margin-bottom: 20px;
-}
+h1 { font-size: clamp(38px, 5.5vw, 64px); font-weight: 900; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 20px; }
 h1 em { font-style: normal; color: var(--red); }
-.hero-sub {
-  font-size: 18px; color: var(--muted); line-height: 1.7; margin-bottom: 36px; max-width: 480px;
-}
-.hero-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.hero-sub { font-size: 18px; color: var(--muted); line-height: 1.7; margin-bottom: 36px; }
+.hero-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .btn-primary {
   background: var(--red); color: #fff; border: none; border-radius: 12px;
   padding: 14px 32px; font-size: 15px; font-weight: 800; cursor: pointer;
-  text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
-  transition: all 0.2s;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;
 }
-.btn-primary:hover { background: var(--red2); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,59,48,0.4); }
+.btn-primary:hover { background: var(--red2); transform: translateY(-2px); box-shadow: 0 12px 32px rgba(255,59,48,0.35); }
 .btn-secondary {
   background: transparent; color: var(--text); border: 1px solid var(--border);
   border-radius: 12px; padding: 14px 28px; font-size: 15px; font-weight: 600;
@@ -104,137 +91,94 @@ h1 em { font-style: normal; color: var(--red); }
 }
 .btn-secondary:hover { border-color: var(--dim); background: var(--bg2); }
 
-/* ── Mesh Canvas ── */
-.hero-visual {
-  flex: 1; display: flex; justify-content: center; align-items: center;
-  position: relative; z-index: 2; min-height: 500px;
-}
-#meshCanvas { border-radius: 20px; }
+/* ── Canvas visual ── */
+.hero-visual { flex: 1; display: flex; justify-content: center; align-items: center; z-index: 2; min-width: 0; }
+#meshCanvas { max-width: 100%; border-radius: 16px; border: 1px solid var(--border); }
 
 /* ── Stat strip ── */
 .stat-strip {
-  display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0;
+  display: grid; grid-template-columns: repeat(4, 1fr);
   border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
   background: var(--bg2);
 }
-.stat-item {
-  flex: 1; min-width: 180px; padding: 28px 32px; text-align: center;
-  border-right: 1px solid var(--border);
-}
+.stat-item { padding: 28px 32px; text-align: center; border-right: 1px solid var(--border); }
 .stat-item:last-child { border-right: none; }
-.stat-num { font-size: 36px; font-weight: 900; color: var(--text); margin-bottom: 4px; }
-.stat-num.red { color: var(--red); }
-.stat-num.blue { color: var(--blue); }
-.stat-num.green { color: var(--green); }
-.stat-lbl { font-size: 13px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.8px; }
+.stat-num { font-size: 36px; font-weight: 900; margin-bottom: 4px; }
+.stat-lbl { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
 
-/* ── Section common ── */
-section { padding: 100px 48px; }
-.section-tag {
-  display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 2px;
-  text-transform: uppercase; color: var(--red); margin-bottom: 12px;
-}
-.section-title { font-size: clamp(28px, 4vw, 44px); font-weight: 900; letter-spacing: -0.8px; margin-bottom: 16px; }
-.section-sub { font-size: 17px; color: var(--muted); line-height: 1.7; max-width: 560px; }
+/* ── Sections ── */
+section { padding: 96px 48px; }
+.section-tag { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--red); margin-bottom: 12px; }
+.section-title { font-size: clamp(26px, 3.5vw, 42px); font-weight: 900; letter-spacing: -0.8px; margin-bottom: 14px; }
+.section-sub { font-size: 16px; color: var(--muted); line-height: 1.7; max-width: 520px; }
 
 /* ── How it works ── */
 .how-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 2px; margin-top: 60px; background: var(--border); border-radius: 20px; overflow: hidden;
+  gap: 1px; margin-top: 56px; background: var(--border); border-radius: 18px; overflow: hidden;
 }
-.how-card {
-  background: var(--bg2); padding: 40px 32px; position: relative;
-  transition: background 0.2s;
-}
+.how-card { background: var(--bg2); padding: 40px 32px; position: relative; transition: background 0.2s; }
 .how-card:hover { background: var(--bg3); }
-.how-num {
-  font-size: 72px; font-weight: 900; line-height: 1;
-  color: rgba(255,59,48,0.08); position: absolute; top: 20px; right: 24px;
-  font-variant-numeric: tabular-nums;
-}
-.how-icon { font-size: 36px; margin-bottom: 20px; }
-.how-title { font-size: 18px; font-weight: 800; margin-bottom: 10px; }
-.how-desc { font-size: 14px; color: var(--muted); line-height: 1.7; }
+.how-num { font-size: 64px; font-weight: 900; line-height: 1; color: rgba(255,59,48,0.07); position: absolute; top: 16px; right: 20px; }
+.how-icon { font-size: 34px; margin-bottom: 18px; }
+.how-title { font-size: 17px; font-weight: 800; margin-bottom: 10px; }
+.how-desc { font-size: 13px; color: var(--muted); line-height: 1.75; }
 
 /* ── Features ── */
 .features-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1px; margin-top: 60px; background: var(--border); border-radius: 24px; overflow: hidden;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1px; margin-top: 56px; background: var(--border); border-radius: 20px; overflow: hidden;
 }
-.feat-card {
-  background: var(--bg2); padding: 36px 32px; transition: background 0.25s;
-  opacity: 0; transform: translateY(20px);
-  transition: background 0.25s, opacity 0.5s, transform 0.5s;
-}
+.feat-card { background: var(--bg2); padding: 32px 28px; transition: background 0.2s, opacity 0.5s, transform 0.5s; opacity: 0; transform: translateY(16px); }
 .feat-card.visible { opacity: 1; transform: translateY(0); }
 .feat-card:hover { background: var(--bg3); }
-.feat-icon {
-  width: 52px; height: 52px; border-radius: 14px; margin-bottom: 20px;
-  display: flex; align-items: center; justify-content: center; font-size: 24px;
-}
-.feat-title { font-size: 17px; font-weight: 800; margin-bottom: 8px; }
+.feat-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 18px; }
+.feat-title { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
 .feat-desc { font-size: 13px; color: var(--muted); line-height: 1.7; }
-.feat-tag {
-  display: inline-block; margin-top: 14px; font-size: 11px; font-weight: 700;
-  letter-spacing: 0.8px; padding: 4px 10px; border-radius: 6px;
-}
+.feat-tag { display: inline-block; margin-top: 14px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; padding: 4px 10px; border-radius: 6px; }
 
-/* ── Architecture diagram ── */
-.arch-wrap {
-  margin-top: 60px; background: var(--bg2); border: 1px solid var(--border);
-  border-radius: 24px; padding: 48px; overflow: hidden;
-}
-.arch-diagram { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; }
-.arch-node {
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
-  padding: 20px;
-}
-.arch-icon {
-  width: 72px; height: 72px; border-radius: 20px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 32px; border: 1px solid var(--border);
-}
-.arch-label { font-size: 12px; font-weight: 700; color: var(--muted); text-align: center; letter-spacing: 0.5px; }
-.arch-arrow {
-  font-size: 28px; color: var(--dim); padding: 0 8px;
-  display: flex; align-items: center;
-}
-.arch-arrow.animated { animation: arrowPulse 1.5s infinite; }
-@keyframes arrowPulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
+/* ── Architecture ── */
+.arch-wrap { margin-top: 56px; background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 44px; }
+.arch-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0; }
+.arch-node { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px; }
+.arch-icon { width: 68px; height: 68px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 30px; border: 1px solid var(--border); }
+.arch-lbl { font-size: 11px; font-weight: 700; color: var(--muted); text-align: center; letter-spacing: 0.5px; }
+.arch-arrow { font-size: 22px; color: var(--dim); padding: 0 4px; display: flex; align-items: center; animation: arrowPulse 1.5s ease-in-out infinite; }
+@keyframes arrowPulse { 0%,100%{opacity:0.3;transform:translateX(0)} 50%{opacity:1;transform:translateX(3px)} }
+.arch-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 36px; }
+.arch-detail { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+.arch-detail-tag { font-size: 10px; font-weight: 800; letter-spacing: 1px; margin-bottom: 6px; text-transform: uppercase; }
+.arch-detail-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.arch-detail-desc { font-size: 12px; color: var(--muted); line-height: 1.6; }
 
 /* ── CTA ── */
 .cta-section {
-  text-align: center; padding: 100px 48px;
-  background: linear-gradient(135deg, rgba(255,59,48,0.05) 0%, transparent 50%, rgba(30,136,229,0.05) 100%);
+  text-align: center; padding: 96px 48px;
+  background: linear-gradient(160deg, rgba(255,59,48,0.04) 0%, transparent 50%, rgba(30,136,229,0.04) 100%);
   border-top: 1px solid var(--border);
 }
-.cta-section h2 { font-size: clamp(30px, 4vw, 52px); font-weight: 900; letter-spacing: -1px; margin-bottom: 16px; }
-.cta-section p { font-size: 17px; color: var(--muted); max-width: 480px; margin: 0 auto 40px; line-height: 1.7; }
+.cta-section h2 { font-size: clamp(28px, 4vw, 48px); font-weight: 900; letter-spacing: -1px; margin-bottom: 14px; }
+.cta-section p { font-size: 17px; color: var(--muted); max-width: 460px; margin: 0 auto 36px; line-height: 1.7; }
 
 /* ── Footer ── */
 footer {
   background: var(--bg2); border-top: 1px solid var(--border);
-  padding: 32px 48px;
-  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+  padding: 28px 48px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
 }
 footer p { font-size: 13px; color: var(--muted); }
 .footer-links { display: flex; gap: 24px; }
 .footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
 .footer-links a:hover { color: var(--text); }
 
-/* ── Animate on scroll ── */
-.fade-up { opacity: 0; transform: translateY(30px); transition: opacity 0.6s, transform 0.6s; }
+/* ── Scroll animations ── */
+.fade-up { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
 .fade-up.visible { opacity: 1; transform: translateY(0); }
 </style>
 </head>
 <body>
 
-<!-- Navbar -->
 <nav id="navbar">
-  <a href="/" class="nav-logo">
-    <div class="logo-dot"></div>
-    MeshAlert
-  </a>
+  <a href="/" class="nav-logo"><div class="logo-dot"></div>MeshAlert</a>
   <div class="nav-links">
     <a href="#how">How it works</a>
     <a href="#features">Features</a>
@@ -245,42 +189,26 @@ footer p { font-size: 13px; color: var(--muted); }
 
 <!-- Hero -->
 <section class="hero">
-  <div class="hero-glow"></div>
-  <div class="hero-glow2"></div>
-  <div class="hero-content fade-up">
-    <div class="hero-badge"><span></span> Live System Active</div>
+  <div class="hero-content">
+    <div class="hero-badge"><span></span>Live System Active</div>
     <h1>Disaster Relief<br>Without <em>Internet</em></h1>
-    <p class="hero-sub">
-      MeshAlert creates a Bluetooth mesh network between nearby devices — so survivors can broadcast SOS signals, share GPS locations, and relay messages even when all infrastructure is down.
-    </p>
+    <p class="hero-sub">MeshAlert creates a Bluetooth mesh between nearby devices — survivors broadcast SOS, share GPS, and relay messages even when all infrastructure is down.</p>
     <div class="hero-actions">
       <a href="/login.html" class="btn-primary">Launch Dashboard →</a>
       <a href="#how" class="btn-secondary">See how it works</a>
     </div>
   </div>
   <div class="hero-visual">
-    <canvas id="meshCanvas" width="520" height="480"></canvas>
+    <canvas id="meshCanvas" width="480" height="440"></canvas>
   </div>
 </section>
 
 <!-- Stat strip -->
 <div class="stat-strip">
-  <div class="stat-item">
-    <div class="stat-num red" id="s-alerts">—</div>
-    <div class="stat-lbl">SOS Alerts Tracked</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num" id="s-medical">—</div>
-    <div class="stat-lbl">Medical Emergencies</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num blue">50m</div>
-    <div class="stat-lbl">BLE Range per Hop</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num green">10</div>
-    <div class="stat-lbl">Max Relay Hops</div>
-  </div>
+  <div class="stat-item"><div class="stat-num" style="color:var(--red)" id="s-alerts">—</div><div class="stat-lbl">SOS Alerts Tracked</div></div>
+  <div class="stat-item"><div class="stat-num" style="color:var(--text)" id="s-medical">—</div><div class="stat-lbl">Medical Emergencies</div></div>
+  <div class="stat-item"><div class="stat-num" style="color:var(--blue)">50m</div><div class="stat-lbl">BLE Range / Hop</div></div>
+  <div class="stat-item"><div class="stat-num" style="color:var(--green)">10</div><div class="stat-lbl">Max Relay Hops</div></div>
 </div>
 
 <!-- How it works -->
@@ -288,92 +216,47 @@ footer p { font-size: 13px; color: var(--muted); }
   <div class="fade-up">
     <div class="section-tag">How it works</div>
     <h2 class="section-title">Three steps to save a life</h2>
-    <p class="section-sub">No Wi-Fi, no cell towers, no internet needed. Pure Bluetooth mesh — works anywhere.</p>
+    <p class="section-sub">No Wi-Fi, no cell towers, no internet needed. Pure Bluetooth mesh — works anywhere on Earth.</p>
   </div>
   <div class="how-grid fade-up">
     <div class="how-card">
       <div class="how-num">01</div>
       <div class="how-icon">📱</div>
       <div class="how-title">Install & Set Up</div>
-      <div class="how-desc">Download MeshAlert on Android. Enter your name and medical info in the profile — it gets broadcast with every SOS so first responders know who you are.</div>
+      <div class="how-desc">Download MeshAlert on Android. Enter your name and medical info in your profile — it gets broadcast with every SOS so first responders know who you are before they reach you.</div>
     </div>
     <div class="how-card">
       <div class="how-num">02</div>
       <div class="how-icon">📡</div>
       <div class="how-title">Mesh Connects Automatically</div>
-      <div class="how-desc">The app advertises via BLE and scans for nearby peers. Devices within 50m form a mesh automatically — no setup needed. Each device acts as a relay node.</div>
+      <div class="how-desc">The app advertises via BLE and scans for nearby peers. Devices within 50m form a mesh automatically. Each device acts as a relay node, extending the network with every person nearby.</div>
     </div>
     <div class="how-card">
       <div class="how-num">03</div>
       <div class="how-icon">🆘</div>
       <div class="how-title">SOS Propagates the Mesh</div>
-      <div class="how-desc">Press the SOS button. Your alert — GPS coordinates, blood group, voice note — relays hop-by-hop through every nearby device until it reaches a gateway with internet.</div>
+      <div class="how-desc">Press SOS. Your alert — GPS, blood group, voice note — relays hop-by-hop through every nearby device until it reaches a gateway with internet and syncs to the command dashboard.</div>
     </div>
   </div>
 </section>
 
 <!-- Features -->
-<section id="features" style="background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+<section id="features" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
   <div class="fade-up">
     <div class="section-tag">Features</div>
     <h2 class="section-title">Built for the worst case scenario</h2>
-    <p class="section-sub">Every feature is designed to work when infrastructure fails — because that's exactly when you need it most.</p>
+    <p class="section-sub">Every feature works when infrastructure fails — because that's exactly when you need it most.</p>
   </div>
-  <div class="features-grid">
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(255,59,48,0.1)">📡</div>
-      <div class="feat-title">BLE Mesh Network</div>
-      <div class="feat-desc">Pure Bluetooth Low Energy GATT protocol. No Google Play Services, no internet required. Works on all Android devices with BLE support.</div>
-      <span class="feat-tag" style="background:rgba(255,59,48,0.1);color:#FF6B63">Always Offline</span>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(255,59,48,0.1)">🔴</div>
-      <div class="feat-title">One-Tap SOS Broadcast</div>
-      <div class="feat-desc">Tap to broadcast. Shake three times for instant SOS. Long-press to skip countdown. Your alert propagates through up to 10 relay hops.</div>
-      <span class="feat-tag" style="background:rgba(255,59,48,0.1);color:#FF6B63">Emergency Response</span>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(30,136,229,0.1)">📍</div>
-      <div class="feat-title">GPS Location Sharing</div>
-      <div class="feat-desc">Every SOS includes precise GPS coordinates. Pinned live on the dashboard map so rescue teams know exactly where to go — without needing to call.</div>
-      <span class="feat-tag" style="background:rgba(30,136,229,0.1);color:#64B5F6">Location Aware</span>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(0,200,83,0.1)">🎙</div>
-      <div class="feat-title">Voice SOS Notes</div>
-      <div class="feat-desc">Hold to record a voice message, attach it to your SOS. Recipients can play it back directly in the app or dashboard — no typing needed in a crisis.</div>
-      <span class="feat-tag" style="background:rgba(0,200,83,0.1);color:#69F0AE">Hands-Free</span>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(255,140,0,0.1)">🩸</div>
-      <div class="feat-title">Medical Profile Broadcast</div>
-      <div class="feat-desc">Blood group, allergies, conditions, emergency contacts — all embedded in your SOS payload. First responders get critical info the moment your signal arrives.</div>
-      <span class="feat-tag" style="background:rgba(255,140,0,0.1);color:#FFB74D">Triage Ready</span>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(156,39,176,0.1)">🔷</div>
-      <div class="feat-title">QR Identity Card</div>
-      <div class="feat-desc">Your profile generates a scannable QR code. A first responder can scan your phone screen — even if you're unconscious — to instantly access your medical info.</div>
-      <span class="feat-tag" style="background:rgba(156,39,176,0.1);color:#CE93D8">Scan & Identify</span>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(30,136,229,0.1)">💓</div>
-      <div class="feat-title">Heartbeat Ping</div>
-      <div class="feat-desc">Every 5 minutes, each device broadcasts a heartbeat. Responders can see which survivors are still active and where they are, even without a formal SOS.</div>
-      <span class="feat-tag" style="background:rgba(30,136,229,0.1);color:#64B5F6">Passive Monitoring</span>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(0,200,83,0.1)">🗺</div>
-      <div class="feat-title">Live Command Dashboard</div>
-      <div class="feat-desc">Real-time map of all SOS alerts, live feed, CSV export, and SSE-powered updates. Deploy it on Railway and your team sees everything the moment it happens.</div>
-      <span class="feat-tag" style="background:rgba(0,200,83,0.1);color:#69F0AE">Command Center</span>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:rgba(255,59,48,0.1)">🔒</div>
-      <div class="feat-title">Foreground Service</div>
-      <div class="feat-desc">An Android foreground service keeps BLE scanning alive even when the screen is off. Battery optimization exemption prevents Doze mode from throttling the mesh.</div>
-      <span class="feat-tag" style="background:rgba(255,59,48,0.1);color:#FF6B63">Always On</span>
-    </div>
+  <div class="features-grid" id="feat-grid">
+    <div class="feat-card"><div class="feat-icon" style="background:rgba(255,59,48,0.1)">📡</div><div class="feat-title">BLE Mesh Network</div><div class="feat-desc">Pure Bluetooth Low Energy GATT protocol. No Google Play Services, no internet. Works on all Android devices.</div><span class="feat-tag" style="background:rgba(255,59,48,0.1);color:#FF6B63">Always Offline</span></div>
+    <div class="feat-card"><div class="feat-icon" style="background:rgba(255,59,48,0.1)">🔴</div><div class="feat-title">One-Tap SOS Broadcast</div><div class="feat-desc">Tap to broadcast. Shake three times for instant SOS. Your alert propagates through up to 10 relay hops automatically.</div><span class="feat-tag" style="background:rgba(255,59,48,0.1);color:#FF6B63">Emergency Ready</span></div>
+    <div class="feat-card"><div class="feat-icon" style="background:rgba(30,136,229,0.1)">📍</div><div class="feat-title">GPS Location Sharing</div><div class="feat-desc">Every SOS includes precise GPS coordinates, pinned live on the dashboard map so rescue teams know exactly where to go.</div><span class="feat-tag" style="background:rgba(30,136,229,0.1);color:#64B5F6">Location Aware</span></div>
+    <div class="feat-card"><div class="feat-icon" style="background:rgba(0,200,83,0.1)">🎙</div><div class="feat-title">Voice SOS Notes</div><div class="feat-desc">Hold to record a voice message, attach to your SOS. Recipients play it back in the app or dashboard — no typing in a crisis.</div><span class="feat-tag" style="background:rgba(0,200,83,0.1);color:#69F0AE">Hands-Free</span></div>
+    <div class="feat-card"><div class="feat-icon" style="background:rgba(255,140,0,0.1)">🩸</div><div class="feat-title">Medical Profile Broadcast</div><div class="feat-desc">Blood group, allergies, conditions, emergency contacts — all embedded in your SOS payload for immediate triage.</div><span class="feat-tag" style="background:rgba(255,140,0,0.1);color:#FFB74D">Triage Ready</span></div>
+    <div class="feat-card"><div class="feat-icon" style="background:rgba(156,39,176,0.1)">🔷</div><div class="feat-title">QR Identity Card</div><div class="feat-desc">Your profile generates a scannable QR code. First responders scan your screen — even if you're unconscious — for instant medical info.</div><span class="feat-tag" style="background:rgba(156,39,176,0.1);color:#CE93D8">Scan & Identify</span></div>
+    <div class="feat-card"><div class="feat-icon" style="background:rgba(30,136,229,0.1)">💓</div><div class="feat-title">Heartbeat Ping</div><div class="feat-desc">Every 5 minutes, each device broadcasts a heartbeat so responders know which survivors are still active and where they are.</div><span class="feat-tag" style="background:rgba(30,136,229,0.1);color:#64B5F6">Passive Monitoring</span></div>
+    <div class="feat-card"><div class="feat-icon" style="background:rgba(0,200,83,0.1)">🗺</div><div class="feat-title">Live Command Dashboard</div><div class="feat-desc">Real-time map, live alert feed, CSV export, SSE push updates. Deploy on Railway — your team sees everything the moment it happens.</div><span class="feat-tag" style="background:rgba(0,200,83,0.1);color:#69F0AE">Command Center</span></div>
+    <div class="feat-card"><div class="feat-icon" style="background:rgba(255,59,48,0.1)">🔒</div><div class="feat-title">Background Service</div><div class="feat-desc">An Android foreground service keeps BLE alive with screen off. Battery optimization exemption prevents Doze mode from throttling the mesh.</div><span class="feat-tag" style="background:rgba(255,59,48,0.1);color:#FF6B63">Always On</span></div>
   </div>
 </section>
 
@@ -385,58 +268,24 @@ footer p { font-size: 13px; color: var(--muted); }
     <p class="section-sub">Messages relay hop-by-hop through nearby phones. When any node gains internet, it syncs to the cloud dashboard automatically.</p>
   </div>
   <div class="arch-wrap fade-up">
-    <div class="arch-diagram">
-      <div class="arch-node">
-        <div class="arch-icon" style="background:rgba(255,59,48,0.08);border-color:rgba(255,59,48,0.2)">📱</div>
-        <div class="arch-label">SURVIVOR<br>DEVICE</div>
-      </div>
-      <div class="arch-arrow animated">→</div>
-      <div class="arch-node">
-        <div class="arch-icon" style="background:rgba(30,136,229,0.08);border-color:rgba(30,136,229,0.2)">📡</div>
-        <div class="arch-label">BLE HOP<br>NODE 1</div>
-      </div>
-      <div class="arch-arrow animated" style="animation-delay:0.3s">→</div>
-      <div class="arch-node">
-        <div class="arch-icon" style="background:rgba(30,136,229,0.08);border-color:rgba(30,136,229,0.2)">📡</div>
-        <div class="arch-label">BLE HOP<br>NODE 2</div>
-      </div>
-      <div class="arch-arrow animated" style="animation-delay:0.6s">→</div>
-      <div class="arch-node">
-        <div class="arch-icon" style="background:rgba(0,200,83,0.08);border-color:rgba(0,200,83,0.2)">🌐</div>
-        <div class="arch-label">GATEWAY<br>(INTERNET)</div>
-      </div>
-      <div class="arch-arrow animated" style="animation-delay:0.9s">→</div>
-      <div class="arch-node">
-        <div class="arch-icon" style="background:rgba(255,140,0,0.08);border-color:rgba(255,140,0,0.2)">☁️</div>
-        <div class="arch-label">RAILWAY<br>BACKEND</div>
-      </div>
-      <div class="arch-arrow animated" style="animation-delay:1.2s">→</div>
-      <div class="arch-node">
-        <div class="arch-icon" style="background:rgba(156,39,176,0.08);border-color:rgba(156,39,176,0.2)">🖥</div>
-        <div class="arch-label">COMMAND<br>DASHBOARD</div>
-      </div>
+    <div class="arch-row">
+      <div class="arch-node"><div class="arch-icon" style="background:rgba(255,59,48,0.08);border-color:rgba(255,59,48,0.18)">📱</div><div class="arch-lbl">SURVIVOR<br>DEVICE</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node"><div class="arch-icon" style="background:rgba(30,136,229,0.08);border-color:rgba(30,136,229,0.18)">📡</div><div class="arch-lbl">BLE HOP<br>NODE 1</div></div>
+      <div class="arch-arrow" style="animation-delay:0.3s">→</div>
+      <div class="arch-node"><div class="arch-icon" style="background:rgba(30,136,229,0.08);border-color:rgba(30,136,229,0.18)">📡</div><div class="arch-lbl">BLE HOP<br>NODE 2</div></div>
+      <div class="arch-arrow" style="animation-delay:0.6s">→</div>
+      <div class="arch-node"><div class="arch-icon" style="background:rgba(0,200,83,0.08);border-color:rgba(0,200,83,0.18)">🌐</div><div class="arch-lbl">GATEWAY<br>(INTERNET)</div></div>
+      <div class="arch-arrow" style="animation-delay:0.9s">→</div>
+      <div class="arch-node"><div class="arch-icon" style="background:rgba(255,140,0,0.08);border-color:rgba(255,140,0,0.18)">☁️</div><div class="arch-lbl">RAILWAY<br>BACKEND</div></div>
+      <div class="arch-arrow" style="animation-delay:1.2s">→</div>
+      <div class="arch-node"><div class="arch-icon" style="background:rgba(156,39,176,0.08);border-color:rgba(156,39,176,0.18)">🖥</div><div class="arch-lbl">COMMAND<br>DASHBOARD</div></div>
     </div>
-    <div style="margin-top:40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px">
-        <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:var(--red);margin-bottom:8px">TRANSPORT</div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:4px">BLE 4.0+ GATT</div>
-        <div style="font-size:12px;color:var(--muted)">Custom 128-bit UUID service. Split advertisement + scan response to fit BLE 31-byte limit.</div>
-      </div>
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px">
-        <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:var(--blue);margin-bottom:8px">DEDUPLICATION</div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:4px">MessageID + Seen Set</div>
-        <div style="font-size:12px;color:var(--muted)">Each message has a UUID. Devices track seen IDs to prevent loops. TTL decrements each hop.</div>
-      </div>
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px">
-        <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:var(--green);margin-bottom:8px">SYNC</div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:4px">Auto Cloud Upload</div>
-        <div style="font-size:12px;color:var(--muted)">SyncService monitors connectivity. When internet returns, all queued SOS messages upload to Railway instantly.</div>
-      </div>
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px">
-        <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:var(--orange);margin-bottom:8px">REAL-TIME</div>
-        <div style="font-size:14px;font-weight:700;margin-bottom:4px">SSE Push Events</div>
-        <div style="font-size:12px;color:var(--muted)">Dashboard uses Server-Sent Events — alerts appear on the map within milliseconds of being received by the backend.</div>
-      </div>
+    <div class="arch-details">
+      <div class="arch-detail"><div class="arch-detail-tag" style="color:var(--red)">Transport</div><div class="arch-detail-title">BLE 4.0+ GATT</div><div class="arch-detail-desc">Custom 128-bit UUID. Split advertisement + scan response to stay within the 31-byte BLE limit.</div></div>
+      <div class="arch-detail"><div class="arch-detail-tag" style="color:var(--blue)">Deduplication</div><div class="arch-detail-title">MessageID + Seen Set</div><div class="arch-detail-desc">Each message has a UUID. Devices track seen IDs to prevent relay loops. TTL decrements each hop.</div></div>
+      <div class="arch-detail"><div class="arch-detail-tag" style="color:var(--green)">Sync</div><div class="arch-detail-title">Auto Cloud Upload</div><div class="arch-detail-desc">SyncService monitors connectivity. When internet returns, all queued SOS messages upload to Railway instantly.</div></div>
+      <div class="arch-detail"><div class="arch-detail-tag" style="color:var(--orange)">Real-time</div><div class="arch-detail-title">SSE Push Events</div><div class="arch-detail-desc">Dashboard uses Server-Sent Events — alerts appear on the map within milliseconds of arriving at the backend.</div></div>
     </div>
   </div>
 </section>
@@ -444,16 +293,13 @@ footer p { font-size: 13px; color: var(--muted); }
 <!-- CTA -->
 <div class="cta-section fade-up">
   <h2>Ready to deploy <em style="color:var(--red)">MeshAlert</em>?</h2>
-  <p>Set up your command dashboard in minutes. The Android app is free and works offline from day one.</p>
+  <p>Set up your command dashboard in minutes. The Android app works offline from day one.</p>
   <a href="/login.html" class="btn-primary" style="font-size:16px;padding:16px 40px">Launch Dashboard →</a>
 </div>
 
 <!-- Footer -->
 <footer>
-  <div class="nav-logo" style="text-decoration:none;display:flex;align-items:center;gap:8px">
-    <div class="logo-dot"></div>
-    <span style="font-size:16px;font-weight:800;color:var(--text)">MeshAlert</span>
-  </div>
+  <div style="display:flex;align-items:center;gap:8px"><div class="logo-dot"></div><span style="font-size:15px;font-weight:800">MeshAlert</span></div>
   <p>Offline disaster relief mesh network</p>
   <div class="footer-links">
     <a href="/login.html">Dashboard</a>
@@ -463,163 +309,161 @@ footer p { font-size: 13px; color: var(--muted); }
 </footer>
 
 <script>
-// ── Fetch live stats ──────────────────────────────────────────────────────────
-async function loadStats() {
-  try {
-    const token = sessionStorage.getItem('mesh_token') || '';
-    const r = await fetch('/api/sos', { headers: token ? { 'Authorization': 'Bearer ' + token } : {} });
-    if (!r.ok) return;
-    const msgs = await r.json();
-    const sos = msgs.filter(m => m.type === 'SOS');
-    animateCount('s-alerts', sos.length);
-    animateCount('s-medical', sos.filter(m => m.emergencyType === 'MEDICAL').length);
-  } catch {}
-}
+// ── Canvas mesh animation (safe — no roundRect) ───────────────────────────────
+(function() {
+  var canvas = document.getElementById('meshCanvas');
+  var ctx    = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
 
-function animateCount(id, target) {
-  const el = document.getElementById(id);
-  if (!el || target === 0) { if (el) el.textContent = target; return; }
-  let current = 0;
-  const step = Math.ceil(target / 30);
-  const t = setInterval(() => {
-    current = Math.min(current + step, target);
-    el.textContent = current;
-    if (current >= target) clearInterval(t);
-  }, 40);
-}
+  // Node colors per type
+  var COLORS = { sos: '#FF3B30', relay: '#1E88E5', peer: '#00C853' };
 
-// ── Mesh canvas animation ─────────────────────────────────────────────────────
-const canvas = document.getElementById('meshCanvas');
-const ctx    = canvas.getContext('2d');
-
-const NODES = 12;
-const nodes = Array.from({ length: NODES }, (_, i) => ({
-  x: 60 + Math.random() * 400,
-  y: 40 + Math.random() * 400,
-  vx: (Math.random() - 0.5) * 0.4,
-  vy: (Math.random() - 0.5) * 0.4,
-  r: 5 + Math.random() * 4,
-  pulse: Math.random() * Math.PI * 2,
-  type: i === 0 ? 'sos' : i < 3 ? 'relay' : 'peer',
-}));
-
-// Signal pulses
-const pulses = [];
-function addPulse(node) {
-  pulses.push({ x: node.x, y: node.y, r: node.r, maxR: 40, alpha: 0.6, color: node.type === 'sos' ? '#FF3B30' : '#1E88E5' });
-}
-setInterval(() => { if (nodes[0]) addPulse(nodes[0]); }, 2000);
-setInterval(() => { if (nodes[1]) addPulse(nodes[1]); }, 3000);
-
-function drawFrame() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Background gradient
-  const bg = ctx.createRadialGradient(260, 240, 0, 260, 240, 280);
-  bg.addColorStop(0, 'rgba(13,20,32,0.8)');
-  bg.addColorStop(1, 'rgba(7,11,20,0.95)');
-  ctx.fillStyle = bg;
-  ctx.beginPath();
-  ctx.roundRect(0, 0, canvas.width, canvas.height, 20);
-  ctx.fill();
-
-  // Update nodes
-  nodes.forEach(n => {
-    n.x += n.vx; n.y += n.vy; n.pulse += 0.03;
-    if (n.x < 20 || n.x > canvas.width - 20)  n.vx *= -1;
-    if (n.y < 20 || n.y > canvas.height - 20) n.vy *= -1;
-  });
-
-  // Draw connections
-  nodes.forEach((a, i) => {
-    nodes.forEach((b, j) => {
-      if (j <= i) return;
-      const d = Math.hypot(a.x - b.x, a.y - b.y);
-      if (d > 160) return;
-      const alpha = (1 - d / 160) * 0.35;
-      ctx.strokeStyle = `rgba(30,136,229,${alpha})`;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 8]);
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
+  var nodes = [];
+  for (var i = 0; i < 11; i++) {
+    nodes.push({
+      x: 40 + Math.random() * (W - 80),
+      y: 30 + Math.random() * (H - 60),
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      r: 5 + Math.random() * 3,
+      pulse: Math.random() * Math.PI * 2,
+      type: i === 0 ? 'sos' : i < 3 ? 'relay' : 'peer'
     });
-  });
-
-  // Pulses
-  for (let i = pulses.length - 1; i >= 0; i--) {
-    const p = pulses[i];
-    p.r += 1.2; p.alpha -= 0.015;
-    if (p.alpha <= 0) { pulses.splice(i, 1); continue; }
-    ctx.strokeStyle = p.color.replace(')', `,${p.alpha})`).replace('rgb', 'rgba');
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.stroke();
   }
 
-  // Draw nodes
-  nodes.forEach(n => {
-    const pulse = 0.8 + 0.2 * Math.sin(n.pulse);
-    const color = n.type === 'sos' ? '#FF3B30' : n.type === 'relay' ? '#1E88E5' : '#00C853';
-    const glowAlpha = 0.15 + 0.1 * Math.sin(n.pulse);
+  var pulses = [];
+  function addPulse(n) {
+    pulses.push({ x: n.x, y: n.y, r: n.r + 2, maxR: 38, alpha: 0.55, color: COLORS[n.type] });
+  }
+  setInterval(function() { if (nodes[0]) addPulse(nodes[0]); }, 1800);
+  setInterval(function() { if (nodes[1]) addPulse(nodes[1]); }, 2600);
 
-    // Glow
-    const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 4);
-    g.addColorStop(0, color.replace('#', 'rgba(').replace(/(..)(..)(..)/, (_, r, g, b) =>
-      `${parseInt(r,16)},${parseInt(g,16)},${parseInt(b,16)}`) + `,${glowAlpha})`);
-    g.addColorStop(1, 'transparent');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(n.x, n.y, n.r * 4, 0, Math.PI * 2);
-    ctx.fill();
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
 
-    // Core dot
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(n.x, n.y, n.r * pulse, 0, Math.PI * 2);
-    ctx.fill();
-  });
+    // Background
+    ctx.fillStyle = '#162030';
+    ctx.fillRect(0, 0, W, H);
 
-  // Labels
-  ctx.font = '10px -apple-system, system-ui, sans-serif';
-  ctx.fillStyle = 'rgba(91,122,157,0.9)';
-  ctx.fillText('● SOS Node', 16, canvas.height - 48);
-  ctx.fillStyle = 'rgba(30,136,229,0.9)';
-  ctx.fillText('● Relay Node', 16, canvas.height - 30);
-  ctx.fillStyle = 'rgba(0,200,83,0.9)';
-  ctx.fillText('● Peer Node', 16, canvas.height - 12);
+    // Move nodes
+    nodes.forEach(function(n) {
+      n.x += n.vx; n.y += n.vy; n.pulse += 0.025;
+      if (n.x < 20 || n.x > W - 20) n.vx *= -1;
+      if (n.y < 16 || n.y > H - 16) n.vy *= -1;
+    });
 
-  requestAnimationFrame(drawFrame);
-}
-drawFrame();
-
-// ── Intersection Observer for animations ─────────────────────────────────────
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      e.target.classList.add('visible');
-      // Stagger feat-cards
-      if (e.target.classList.contains('features-grid')) {
-        e.target.querySelectorAll('.feat-card').forEach((c, i) => {
-          setTimeout(() => c.classList.add('visible'), i * 80);
-        });
+    // Connections
+    ctx.setLineDash([3, 7]);
+    for (var i = 0; i < nodes.length; i++) {
+      for (var j = i + 1; j < nodes.length; j++) {
+        var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+        var d = Math.sqrt(dx*dx + dy*dy);
+        if (d > 150) continue;
+        ctx.strokeStyle = 'rgba(30,136,229,' + ((1 - d/150) * 0.28) + ')';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(nodes[i].x, nodes[i].y); ctx.lineTo(nodes[j].x, nodes[j].y); ctx.stroke();
       }
     }
-  });
-}, { threshold: 0.1 });
+    ctx.setLineDash([]);
 
-document.querySelectorAll('.fade-up, .features-grid').forEach(el => observer.observe(el));
+    // Pulses
+    for (var i = pulses.length - 1; i >= 0; i--) {
+      var p = pulses[i];
+      p.r += 1.1; p.alpha -= 0.014;
+      if (p.alpha <= 0 || p.r > p.maxR) { pulses.splice(i, 1); continue; }
+      ctx.strokeStyle = p.color.replace(')', ',' + p.alpha + ')').replace('#', 'rgba(').replace(/^rgba\(([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/, function(_, r, g, b) {
+        return 'rgba(' + parseInt(r,16) + ',' + parseInt(g,16) + ',' + parseInt(b,16);
+      });
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // Node glows + dots
+    nodes.forEach(function(n) {
+      var c = COLORS[n.type];
+      var pulse = 0.85 + 0.15 * Math.sin(n.pulse);
+      // Simple glow using arc with low opacity
+      var glowColors = { sos: 'rgba(255,59,48,', relay: 'rgba(30,136,229,', peer: 'rgba(0,200,83,' };
+      ctx.fillStyle = glowColors[n.type] + '0.08)';
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 3.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = glowColors[n.type] + '0.04)';
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 5.5, 0, Math.PI * 2); ctx.fill();
+      // Core
+      ctx.fillStyle = c;
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * pulse, 0, Math.PI * 2); ctx.fill();
+    });
+
+    // Legend
+    var legends = [['rgba(255,59,48,0.9)', '● SOS Node'], ['rgba(30,136,229,0.9)', '● Relay Node'], ['rgba(0,200,83,0.9)', '● Peer Node']];
+    ctx.font = '10px -apple-system, system-ui, sans-serif';
+    legends.forEach(function(l, i) {
+      ctx.fillStyle = l[0];
+      ctx.fillText(l[1], 14, H - 38 + i * 14);
+    });
+
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+// ── Live stats ─────────────────────────────────────────────────────────────────
+(function() {
+  var token = sessionStorage.getItem('mesh_token') || '';
+  var headers = token ? { Authorization: 'Bearer ' + token } : {};
+  fetch('/api/sos', { headers: headers })
+    .then(function(r) { return r.ok ? r.json() : []; })
+    .then(function(msgs) {
+      var sos = msgs.filter(function(m) { return m.type === 'SOS'; });
+      animCount('s-alerts', sos.length);
+      animCount('s-medical', sos.filter(function(m){ return m.emergencyType==='MEDICAL'; }).length);
+    }).catch(function(){});
+
+  function animCount(id, target) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (target === 0) { el.textContent = 0; return; }
+    var current = 0, step = Math.max(1, Math.ceil(target / 25));
+    var t = setInterval(function() {
+      current = Math.min(current + step, target);
+      el.textContent = current;
+      if (current >= target) clearInterval(t);
+    }, 45);
+  }
+})();
+
+// ── Scroll animations ─────────────────────────────────────────────────────────
+(function() {
+  function checkVisible(el) {
+    var rect = el.getBoundingClientRect();
+    return rect.top < window.innerHeight * 0.92;
+  }
+
+  var fadeEls = document.querySelectorAll('.fade-up');
+  // Immediately show anything already in viewport
+  fadeEls.forEach(function(el) { if (checkVisible(el)) el.classList.add('visible'); });
+
+  var featGrid = document.getElementById('feat-grid');
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (!e.isIntersecting) return;
+      e.target.classList.add('visible');
+      if (e.target === featGrid) {
+        var cards = featGrid.querySelectorAll('.feat-card');
+        cards.forEach(function(c, i) { setTimeout(function(){ c.classList.add('visible'); }, i * 70); });
+      }
+    });
+  }, { threshold: 0.08 });
+
+  fadeEls.forEach(function(el) { if (!el.classList.contains('visible')) observer.observe(el); });
+  if (featGrid) observer.observe(featGrid);
+})();
 
 // ── Navbar shadow on scroll ───────────────────────────────────────────────────
-window.addEventListener('scroll', () => {
+window.addEventListener('scroll', function() {
   document.getElementById('navbar').style.background =
-    window.scrollY > 20 ? 'rgba(7,11,20,0.97)' : 'rgba(7,11,20,0.85)';
+    window.scrollY > 30 ? 'rgba(15,22,35,0.97)' : 'rgba(15,22,35,0.9)';
 });
-
-loadStats();
 </script>
 </body>
 </html>

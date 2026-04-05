@@ -9,273 +9,273 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --red:#FF3B30; --red2:#FF6B63; --blue:#1E88E5; --green:#00C853; --orange:#FF8C00;
-  --purple:#9C27B0; --bg:#070B14; --bg2:#0D1420; --bg3:#111B2C; --surface:#131C2B;
-  --border:#1A2640; --border2:#1E2D42; --text:#E8EDF5; --muted:#5B7A9D; --dim:#2A3D5A;
+  --red:    #FF3B30;
+  --red2:   #FF6B63;
+  --blue:   #1E88E5;
+  --green:  #00C853;
+  --orange: #FF8C00;
+  --bg:     #0F1623;
+  --bg2:    #162030;
+  --bg3:    #1C2B3E;
+  --border: #243347;
+  --text:   #DCE8F5;
+  --muted:  #6B8CAD;
+  --dim:    #2E4060;
 }
 html, body { height: 100%; overflow: hidden; }
 body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; }
 
 /* ══ Topbar ══ */
 .topbar {
-  height: 60px; min-height: 60px;
-  display: flex; align-items: center; padding: 0 24px; gap: 16px;
-  background: var(--bg2); border-bottom: 1px solid var(--border);
-  z-index: 50;
+  height: 58px; min-height: 58px; flex-shrink: 0;
+  display: flex; align-items: center; padding: 0 20px; gap: 14px;
+  background: var(--bg2); border-bottom: 1px solid var(--border); z-index: 50;
 }
-.topbar-logo { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 900; color: var(--text); text-decoration: none; margin-right: 8px; }
-.logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: blink 2s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-.topbar-divider { width: 1px; height: 24px; background: var(--border); }
-.topbar-title { font-size: 14px; font-weight: 700; color: var(--muted); }
-.topbar-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
-.live-badge {
-  display: flex; align-items: center; gap: 6px;
-  background: rgba(0,200,83,0.1); border: 1px solid rgba(0,200,83,0.2);
-  border-radius: 100px; padding: 5px 12px; font-size: 12px; font-weight: 700; color: #69F0AE;
-}
-.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1.5s infinite; }
-.conn-badge {
-  display: flex; align-items: center; gap: 6px;
+.logo-link { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+.logo-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--red); animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.35} }
+.logo-text { font-size: 17px; font-weight: 900; color: var(--text); }
+.topbar-sep { width: 1px; height: 22px; background: var(--border); }
+.page-title { font-size: 13px; font-weight: 600; color: var(--muted); }
+.topbar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
   border-radius: 100px; padding: 5px 12px; font-size: 12px; font-weight: 700;
-  background: rgba(255,59,48,0.1); border: 1px solid rgba(255,59,48,0.2); color: var(--red2);
 }
-.conn-badge.connected { background: rgba(0,200,83,0.08); border-color: rgba(0,200,83,0.2); color: #69F0AE; }
+.pill-live  { background: rgba(0,200,83,0.1);  border: 1px solid rgba(0,200,83,0.2);  color: #5CE890; }
+.pill-conn  { background: rgba(255,59,48,0.08); border: 1px solid rgba(255,59,48,0.2); color: var(--red2); }
+.pill-conn.ok { background: rgba(0,200,83,0.08); border-color: rgba(0,200,83,0.2); color: #5CE890; }
+.pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: blink 1.5s infinite; }
 .icon-btn {
-  width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border);
-  background: var(--bg3); display: flex; align-items: center; justify-content: center;
-  cursor: pointer; font-size: 15px; transition: all 0.2s; color: var(--muted);
+  width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--border);
+  background: var(--bg3); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
+  color: var(--muted); transition: all 0.18s;
 }
-.icon-btn:hover { background: var(--surface); border-color: var(--dim); color: var(--text); }
-.user-chip {
+.icon-btn:hover { background: var(--bg2); border-color: var(--dim); color: var(--text); }
+.user-pill {
   display: flex; align-items: center; gap: 8px;
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 10px; padding: 6px 12px; font-size: 13px; font-weight: 600;
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 9px; padding: 5px 12px;
 }
-.user-avatar {
-  width: 24px; height: 24px; border-radius: 8px; background: var(--red);
-  display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;
+.user-av {
+  width: 22px; height: 22px; border-radius: 7px; background: var(--red);
+  display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff;
 }
+.user-name { font-size: 13px; font-weight: 600; color: var(--text); }
 
-/* ══ Layout ══ */
-.layout { display: flex; flex: 1; overflow: hidden; }
-
-/* ── Sidebar ── */
-.sidebar {
-  width: 260px; min-width: 260px; background: var(--bg2);
-  border-right: 1px solid var(--border);
-  display: flex; flex-direction: column; overflow: hidden;
+/* ══ Stats row ══ */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  flex-shrink: 0; border-bottom: 1px solid var(--border);
+  background: var(--bg2);
 }
-.sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
-.sidebar-label { font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
-
-/* Stat cards in sidebar */
-.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.stat-card {
-  background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px 12px;
-  transition: background 0.2s;
+.stat-cell {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 20px; border-right: 1px solid var(--border); position: relative;
+  overflow: hidden;
 }
-.stat-card:hover { background: var(--surface); }
-.stat-val { font-size: 26px; font-weight: 900; line-height: 1; margin-bottom: 4px; }
-.stat-lbl { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
-
-/* Tunnel URL box */
-.tunnel-box {
-  display: none;
-  background: rgba(0,200,83,0.06); border: 1px solid rgba(0,200,83,0.2);
-  border-radius: 10px; padding: 12px;
+.stat-cell:last-child { border-right: none; }
+.stat-cell::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--border);
 }
-.tunnel-box.show { display: block; }
-.tunnel-label { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: var(--green); margin-bottom: 6px; text-transform: uppercase; }
-.tunnel-url { font-size: 12px; color: var(--text); font-family: monospace; word-break: break-all; cursor: pointer; }
+.stat-cell.medical::before { background: var(--red); }
+.stat-cell.trapped::before { background: var(--orange); }
+.stat-cell.safe::before { background: var(--green); }
+.stat-cell.total::before { background: var(--blue); }
+.stat-icon { font-size: 22px; flex-shrink: 0; }
+.stat-body {}
+.stat-val { font-size: 24px; font-weight: 900; line-height: 1; }
+.stat-lbl { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.4px; margin-top: 2px; text-transform: uppercase; }
+
+/* ══ Main content area ══ */
+.content-area { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+
+/* ── Map ── */
+.map-wrap { flex: 1; position: relative; min-width: 0; }
+#map { width: 100%; height: 100%; }
+
+/* Map overlay chips */
+.map-legend {
+  position: absolute; bottom: 52px; left: 16px; z-index: 900;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.map-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(15,22,35,0.85); backdrop-filter: blur(10px);
+  border: 1px solid var(--border); border-radius: 100px;
+  padding: 5px 12px; font-size: 11px; font-weight: 700; color: var(--text);
+}
+.mc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Feed panel ── */
+.feed-panel {
+  width: 400px; min-width: 400px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg2); border-left: 1px solid var(--border);
+  overflow: hidden;
+}
+.feed-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.feed-title { font-size: 13px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.feed-count { font-size: 11px; background: var(--bg3); border: 1px solid var(--border); border-radius: 100px; padding: 2px 8px; color: var(--muted); font-weight: 700; }
+.feed-actions { display: flex; gap: 6px; }
+
+/* Tunnel box */
+.tunnel-wrap {
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+  background: rgba(0,200,83,0.04); flex-shrink: 0; display: none;
+}
+.tunnel-wrap.show { display: block; }
+.tunnel-tag { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: var(--green); text-transform: uppercase; margin-bottom: 4px; }
+.tunnel-url { font-size: 12px; font-family: monospace; color: var(--text); cursor: pointer; word-break: break-all; }
 .tunnel-url:hover { color: var(--green); }
 
-/* Action buttons */
-.action-btn {
-  display: flex; align-items: center; gap: 10px; width: 100%;
-  background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
-  padding: 11px 14px; font-size: 13px; font-weight: 700; color: var(--text);
-  cursor: pointer; transition: all 0.2s; text-align: left; margin-bottom: 8px;
-}
-.action-btn:last-child { margin-bottom: 0; }
-.action-btn:hover { background: var(--surface); border-color: var(--dim); }
-.action-btn.danger:hover { border-color: rgba(255,59,48,0.4); color: var(--red2); }
-.action-btn .ab-icon { font-size: 16px; }
-
-/* Feed in sidebar */
+/* Feed cards scroll */
 .feed-scroll { flex: 1; overflow-y: auto; padding: 12px; }
-.feed-scroll::-webkit-scrollbar { width: 4px; }
+.feed-scroll::-webkit-scrollbar { width: 5px; }
 .feed-scroll::-webkit-scrollbar-track { background: transparent; }
 .feed-scroll::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 4px; }
+.feed-scroll::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
+/* Alert card */
 .alert-card {
-  background: var(--bg3); border: 1px solid var(--border); border-radius: 12px;
-  padding: 14px; margin-bottom: 8px; border-left: 3px solid transparent;
-  animation: slideIn 0.35s ease both; position: relative; overflow: hidden;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: 12px; padding: 14px; margin-bottom: 8px;
+  cursor: pointer; transition: background 0.15s, border-color 0.15s;
+  animation: slideIn 0.3s ease both; position: relative;
 }
-@keyframes slideIn { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:none; } }
+@keyframes slideIn { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:none; } }
+.alert-card:hover { background: var(--bg2); }
+.alert-card.new-flash { background: rgba(255,59,48,0.07); }
 .alert-card.MEDICAL { border-left-color: var(--red); }
 .alert-card.TRAPPED { border-left-color: var(--orange); }
 .alert-card.SAFE    { border-left-color: var(--green); }
 .alert-card.HEARTBEAT { border-left-color: var(--blue); }
-.ac-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.ac-type { font-size: 11px; font-weight: 800; letter-spacing: 1px; }
-.ac-type.MEDICAL { color: var(--red); }
-.ac-type.TRAPPED { color: var(--orange); }
-.ac-type.SAFE    { color: var(--green); }
-.ac-type.HEARTBEAT { color: var(--blue); }
+.ac-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.ac-type { font-size: 11px; font-weight: 800; letter-spacing: 0.8px; }
+.ac-type.MEDICAL  { color: var(--red); }
+.ac-type.TRAPPED  { color: var(--orange); }
+.ac-type.SAFE     { color: var(--green); }
+.ac-type.HEARTBEAT{ color: var(--blue); }
+.ac-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .ac-age { font-size: 11px; color: var(--muted); }
-.ac-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-.ac-coords { font-size: 11px; color: var(--muted); font-family: monospace; }
-.ac-msg { font-size: 12px; color: var(--muted); font-style: italic; margin-top: 4px; }
-.ac-meta { font-size: 11px; color: var(--dim); margin-top: 6px; }
-.ac-del {
-  position: absolute; top: 10px; right: 10px;
-  background: none; border: none; cursor: pointer; font-size: 13px;
-  color: var(--muted); opacity: 0; transition: opacity 0.2s;
-}
+.ac-del { background: none; border: none; cursor: pointer; font-size: 12px; color: var(--dim); padding: 2px; opacity: 0; transition: opacity 0.15s; }
 .alert-card:hover .ac-del { opacity: 1; }
 .ac-del:hover { color: var(--red); }
+.ac-name { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+.ac-coords { font-size: 11px; color: var(--muted); font-family: monospace; }
+.ac-msg { font-size: 12px; color: var(--muted); font-style: italic; margin-top: 4px; }
+.ac-meta { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.ac-badge { font-size: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px; color: var(--muted); font-weight: 600; }
+.ac-pin { font-size: 10px; color: var(--blue); font-weight: 700; }
 
 /* Empty state */
-.empty-state { text-align: center; padding: 40px 20px; }
-.empty-state .ei { font-size: 36px; margin-bottom: 12px; }
+.empty-state { text-align: center; padding: 48px 20px; }
+.empty-state .ei { font-size: 40px; margin-bottom: 14px; }
 .empty-state .et { font-size: 14px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
 .empty-state .eh { font-size: 12px; color: var(--dim); }
 
-/* ══ Main content ══ */
-.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-
-/* Map container */
-.map-wrap {
-  flex: 1; position: relative; min-height: 0;
-}
-#map { width: 100%; height: 100%; }
-
-/* Map overlay controls */
-.map-overlay {
-  position: absolute; top: 16px; left: 16px; z-index: 1000;
-  display: flex; flex-direction: column; gap: 8px;
-}
-.map-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(7,11,20,0.88); backdrop-filter: blur(12px);
-  border: 1px solid var(--border); border-radius: 100px;
-  padding: 6px 14px; font-size: 12px; font-weight: 700; color: var(--text);
-}
-.map-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
-
-/* Bottom info bar */
+/* ══ Info bar ══ */
 .info-bar {
-  height: 44px; min-height: 44px;
+  height: 38px; min-height: 38px; flex-shrink: 0;
   background: var(--bg2); border-top: 1px solid var(--border);
-  display: flex; align-items: center; padding: 0 20px; gap: 24px;
+  display: flex; align-items: center; padding: 0 16px; gap: 20px;
 }
-.info-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
-.info-item strong { color: var(--text); font-weight: 700; }
+.ib-item { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.ib-item strong { color: var(--text); font-weight: 700; }
 
 /* ══ Leaflet overrides ══ */
-.leaflet-popup-content-wrapper {
-  background: #111B2C !important; color: var(--text) !important;
-  border: 1px solid var(--border) !important; border-radius: 12px !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
-}
-.leaflet-popup-tip { background: #111B2C !important; }
-.leaflet-popup-content { font-family: -apple-system, system-ui, sans-serif !important; margin: 14px 16px !important; }
-.leaflet-popup-content b { color: var(--red) !important; display: block; margin-bottom: 6px; font-size: 13px; letter-spacing: 0.5px; }
+.leaflet-popup-content-wrapper { background: #1C2B3E !important; color: var(--text) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important; }
+.leaflet-popup-tip { background: #1C2B3E !important; }
+.leaflet-popup-content { font-family: -apple-system, system-ui, sans-serif !important; margin: 12px 14px !important; }
+.leaflet-popup-content b { display: block; font-size: 12px; letter-spacing: 0.8px; color: var(--red) !important; margin-bottom: 6px; }
 .leaflet-popup-content p { font-size: 12px; color: var(--muted); margin: 3px 0; line-height: 1.5; }
-.leaflet-tile { filter: brightness(0.75) contrast(1.1) saturate(0.7); }
-.leaflet-control-zoom a {
-  background: var(--bg2) !important; color: var(--text) !important;
-  border-color: var(--border) !important;
-}
+.leaflet-tile { filter: brightness(0.78) contrast(1.05) saturate(0.65); }
+.leaflet-control-zoom a { background: var(--bg2) !important; color: var(--text) !important; border-color: var(--border) !important; }
 .leaflet-control-zoom a:hover { background: var(--bg3) !important; }
-.leaflet-attribution-flag { display: none !important; }
-.leaflet-control-attribution { background: rgba(7,11,20,0.7) !important; color: var(--muted) !important; font-size: 10px !important; }
-
-/* ══ Responsive ══ */
-@media (max-width: 900px) {
-  .sidebar { display: none; }
-}
+.leaflet-control-attribution { background: rgba(15,22,35,0.75) !important; color: var(--muted) !important; font-size: 10px !important; }
 </style>
 </head>
 <body>
 
 <!-- Topbar -->
 <div class="topbar">
-  <a href="/" class="topbar-logo">
+  <a href="/" class="logo-link">
     <div class="logo-dot"></div>
-    MeshAlert
+    <span class="logo-text">MeshAlert</span>
   </a>
-  <div class="topbar-divider"></div>
-  <span class="topbar-title">Command Dashboard</span>
-
+  <div class="topbar-sep"></div>
+  <span class="page-title">Command Dashboard</span>
   <div class="topbar-right">
-    <div class="live-badge"><div class="live-dot"></div> Live</div>
-    <div class="conn-badge" id="conn-badge">⬤ Connecting</div>
+    <div class="pill pill-live"><div class="pill-dot"></div>Live</div>
+    <div class="pill pill-conn" id="conn-pill">⬤ Connecting</div>
+    <button class="icon-btn" onclick="fitMap()" title="Fit map to alerts">⊞</button>
     <button class="icon-btn" onclick="exportCsv()" title="Export CSV">⬇</button>
-    <div class="user-chip">
-      <div class="user-avatar" id="user-avatar">A</div>
-      <span id="user-name">admin</span>
+    <div class="user-pill">
+      <div class="user-av" id="user-av">A</div>
+      <span class="user-name" id="user-name">admin</span>
     </div>
-    <button class="icon-btn" onclick="logout()" title="Sign out">⎋</button>
+    <button class="icon-btn" onclick="logout()" title="Sign out">⏻</button>
   </div>
 </div>
 
-<div class="layout">
-  <!-- Sidebar -->
-  <div class="sidebar">
+<!-- Stats row -->
+<div class="stats-row">
+  <div class="stat-cell total">
+    <div class="stat-icon">🆘</div>
+    <div class="stat-body"><div class="stat-val" id="s-total">0</div><div class="stat-lbl">Total Alerts</div></div>
+  </div>
+  <div class="stat-cell medical">
+    <div class="stat-icon">🏥</div>
+    <div class="stat-body"><div class="stat-val" id="s-medical" style="color:var(--red)">0</div><div class="stat-lbl">Medical</div></div>
+  </div>
+  <div class="stat-cell trapped">
+    <div class="stat-icon">⚠️</div>
+    <div class="stat-body"><div class="stat-val" id="s-trapped" style="color:var(--orange)">0</div><div class="stat-lbl">Trapped</div></div>
+  </div>
+  <div class="stat-cell safe">
+    <div class="stat-icon">✅</div>
+    <div class="stat-body"><div class="stat-val" id="s-safe" style="color:var(--green)">0</div><div class="stat-lbl">Safe</div></div>
+  </div>
+</div>
 
-    <!-- Stats -->
-    <div class="sidebar-section">
-      <div class="sidebar-label">Overview</div>
-      <div class="stat-grid">
-        <div class="stat-card">
-          <div class="stat-val" id="s-total" style="color:var(--text)">0</div>
-          <div class="stat-lbl">Total</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val" id="s-medical" style="color:var(--red)">0</div>
-          <div class="stat-lbl">Medical</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val" id="s-trapped" style="color:var(--orange)">0</div>
-          <div class="stat-lbl">Trapped</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val" id="s-safe" style="color:var(--green)">0</div>
-          <div class="stat-lbl">Safe</div>
-        </div>
+<!-- Map + Feed -->
+<div class="content-area">
+
+  <!-- Map -->
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div class="map-legend">
+      <div class="map-chip"><div class="mc-dot" style="background:var(--red)"></div>Medical</div>
+      <div class="map-chip"><div class="mc-dot" style="background:var(--orange)"></div>Trapped</div>
+      <div class="map-chip"><div class="mc-dot" style="background:var(--green)"></div>Safe</div>
+      <div class="map-chip"><div class="mc-dot" style="background:var(--blue)"></div>Heartbeat</div>
+    </div>
+  </div>
+
+  <!-- Feed panel -->
+  <div class="feed-panel">
+    <div class="feed-header">
+      <div class="feed-title">
+        Live Feed
+        <span class="feed-count" id="feed-count">0</span>
+      </div>
+      <div class="feed-actions">
+        <button class="icon-btn" title="Delete all" onclick="deleteAll()" style="color:var(--red2)">🗑</button>
       </div>
     </div>
 
-    <!-- Tunnel URL -->
-    <div class="sidebar-section">
-      <div class="tunnel-box" id="tunnel-box">
-        <div class="tunnel-label">📱 App Connection URL</div>
-        <div class="tunnel-url" id="tunnel-url" onclick="copyTunnel(this)">—</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:6px">Tap to copy · Enter in app Settings</div>
-      </div>
+    <!-- Tunnel URL (shown when tunnel is active) -->
+    <div class="tunnel-wrap" id="tunnel-wrap">
+      <div class="tunnel-tag">📱 App Connection URL — copy into app Settings</div>
+      <div class="tunnel-url" id="tunnel-url" onclick="copyTunnel(this)">—</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">Tap to copy</div>
     </div>
 
-    <!-- Actions -->
-    <div class="sidebar-section">
-      <div class="sidebar-label">Actions</div>
-      <button class="action-btn" onclick="fitMap()">
-        <span class="ab-icon">🗺</span> Fit Map to Alerts
-      </button>
-      <button class="action-btn" onclick="exportCsv()">
-        <span class="ab-icon">⬇</span> Export CSV
-      </button>
-      <button class="action-btn danger" onclick="deleteAll()">
-        <span class="ab-icon">🗑</span> Delete All Alerts
-      </button>
-    </div>
-
-    <!-- Live Feed -->
-    <div class="sidebar-section" style="border-bottom:none;flex:0 0 auto">
-      <div class="sidebar-label">Live Feed</div>
-    </div>
+    <!-- Scrollable cards -->
     <div class="feed-scroll" id="feed">
       <div class="empty-state">
         <div class="ei">📭</div>
@@ -283,114 +283,78 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, Bl
         <div class="eh">Waiting for phone sync...</div>
       </div>
     </div>
-
   </div>
+</div>
 
-  <!-- Main: Map -->
-  <div class="main">
-    <div class="map-wrap">
-      <div id="map"></div>
-
-      <!-- Map legend overlay -->
-      <div class="map-overlay">
-        <div class="map-chip"><div class="dot" style="background:var(--red)"></div> Medical</div>
-        <div class="map-chip"><div class="dot" style="background:var(--orange)"></div> Trapped</div>
-        <div class="map-chip"><div class="dot" style="background:var(--green)"></div> Safe</div>
-        <div class="map-chip"><div class="dot" style="background:var(--blue)"></div> Heartbeat</div>
-      </div>
-    </div>
-
-    <!-- Info bar -->
-    <div class="info-bar">
-      <div class="info-item">🆘 <strong id="ib-total">0</strong> alerts</div>
-      <div class="info-item">📍 <strong id="ib-geo">0</strong> with GPS</div>
-      <div class="info-item">🔄 <span id="ib-last">—</span></div>
-      <div class="info-item" style="margin-left:auto;font-size:11px;color:var(--dim)">Updates via SSE</div>
-    </div>
-  </div>
+<!-- Info bar -->
+<div class="info-bar">
+  <div class="ib-item">🆘 <strong id="ib-total">0</strong> alerts</div>
+  <div class="ib-item">📍 <strong id="ib-geo">0</strong> with GPS</div>
+  <div class="ib-item" id="ib-last">🕐 —</div>
+  <div class="ib-item" style="margin-left:auto;font-size:11px;color:var(--dim)">Server-Sent Events</div>
 </div>
 
 <script>
 // ── Auth guard ─────────────────────────────────────────────────────────────────
-const token = sessionStorage.getItem('mesh_token');
+var token = sessionStorage.getItem('mesh_token');
 if (!token) { window.location.href = '/login.html'; }
 
-async function verifyAuth() {
-  try {
-    const r = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } });
+function authFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({}, opts.headers || {}, { Authorization: 'Bearer ' + token });
+  return fetch(url, opts);
+}
+
+function logout() { sessionStorage.clear(); window.location.href = '/login.html'; }
+
+function verifyAuth() {
+  authFetch('/api/auth/me').then(function(r) {
     if (!r.ok) { sessionStorage.clear(); window.location.href = '/login.html'; return; }
-    const d = await r.json();
-    const name = d.user?.username || sessionStorage.getItem('mesh_user') || 'admin';
+    return r.json();
+  }).then(function(d) {
+    if (!d) return;
+    var name = (d.user && d.user.username) || sessionStorage.getItem('mesh_user') || 'admin';
     document.getElementById('user-name').textContent = name;
-    document.getElementById('user-avatar').textContent = name[0].toUpperCase();
-  } catch { /* network error — still allow usage */ }
-}
-
-function logout() {
-  sessionStorage.clear();
-  window.location.href = '/login.html';
-}
-
-function authHeaders() { return { Authorization: 'Bearer ' + token }; }
-function authFetch(url, opts = {}) {
-  return fetch(url, { ...opts, headers: { ...(opts.headers || {}), ...authHeaders() } });
+    document.getElementById('user-av').textContent = name[0].toUpperCase();
+  }).catch(function(){});
 }
 
 // ── Map ────────────────────────────────────────────────────────────────────────
-const map = L.map('map', {
-  attributionControl: true, zoomControl: true,
-}).setView([20, 0], 2);
+var map = L.map('map', { attributionControl: true, zoomControl: true }).setView([20, 0], 2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '© OpenStreetMap',
-}).addTo(map);
-
-const markers = {};
+var markers = {};
 
 function markerColor(type) {
-  if (type === 'MEDICAL') return '#FF3B30';
-  if (type === 'TRAPPED') return '#FF8C00';
-  if (type === 'SAFE')    return '#00C853';
-  return '#1E88E5';
+  if (type === 'MEDICAL') return { color: '#FF3B30', emoji: '🏥' };
+  if (type === 'TRAPPED') return { color: '#FF8C00', emoji: '⚠️' };
+  if (type === 'SAFE')    return { color: '#00C853', emoji: '✅' };
+  return { color: '#1E88E5', emoji: '💓' };
 }
 
 function addMapMarker(msg) {
-  const lat = msg.payload?.latitude;
-  const lng = msg.payload?.longitude;
+  var lat = msg.payload && msg.payload.latitude;
+  var lng = msg.payload && msg.payload.longitude;
   if (lat == null || lng == null || (lat === 0 && lng === 0)) return;
   if (markers[msg.messageId]) return;
 
-  const type  = msg.emergencyType ?? msg.type ?? 'SOS';
-  const color = markerColor(type);
-  const time  = new Date(msg.timestamp).toLocaleTimeString();
+  var type = msg.emergencyType || msg.type || 'SOS';
+  var mc   = markerColor(type);
+  var time = new Date(msg.timestamp).toLocaleTimeString();
+  var hops = Array.isArray(msg.hops) ? msg.hops.length : 0;
 
-  // Custom SVG icon
-  const svgIcon = L.divIcon({
-    html: `<div style="
-      width:32px;height:32px;border-radius:50%;
-      background:${color};border:3px solid rgba(255,255,255,0.25);
-      box-shadow:0 0 0 4px ${color}33,0 4px 12px rgba(0,0,0,0.5);
-      display:flex;align-items:center;justify-content:center;
-      font-size:13px;
-    ">${type === 'MEDICAL' ? '🏥' : type === 'TRAPPED' ? '⚠️' : type === 'SAFE' ? '✅' : '💓'}</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -20],
-    className: '',
+  var icon = L.divIcon({
+    html: '<div style="width:34px;height:34px;border-radius:50%;background:' + mc.color + ';border:2.5px solid rgba(255,255,255,0.2);box-shadow:0 0 0 4px ' + mc.color + '28,0 4px 14px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:14px;">' + mc.emoji + '</div>',
+    iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -22], className: ''
   });
 
-  const popup = `
-    <b>${type}</b>
-    <p>👤 ${msg.senderName ?? 'Unknown'}</p>
-    ${msg.payload?.bloodGroup ? `<p>🩸 ${msg.payload.bloodGroup}</p>` : ''}
-    ${msg.payload?.message ? `<p>💬 "${msg.payload.message}"</p>` : ''}
-    <p>🕐 ${time} · ${Array.isArray(msg.hops) ? msg.hops.length : 0} hops</p>
-  `;
+  var popup = '<b>' + type + '</b>'
+    + '<p>👤 ' + (msg.senderName || 'Unknown') + '</p>'
+    + (msg.payload && msg.payload.bloodGroup ? '<p>🩸 ' + msg.payload.bloodGroup + '</p>' : '')
+    + (msg.payload && msg.payload.message   ? '<p>💬 "' + msg.payload.message + '"</p>' : '')
+    + '<p>🕐 ' + time + ' · ' + hops + ' hops</p>';
 
-  const m = L.marker([lat, lng], { icon: svgIcon })
-    .bindPopup(popup, { maxWidth: 240 })
-    .addTo(map);
+  var m = L.marker([lat, lng], { icon: icon }).bindPopup(popup, { maxWidth: 240 }).addTo(map);
   markers[msg.messageId] = m;
 }
 
@@ -399,173 +363,181 @@ function removeMapMarker(id) {
 }
 
 function fitMap() {
-  const pts = Object.values(markers).map(m => m.getLatLng());
+  var pts = Object.values ? Object.values(markers).map(function(m){ return m.getLatLng(); })
+    : Object.keys(markers).map(function(k){ return markers[k].getLatLng(); });
   if (pts.length === 0) return;
   if (pts.length === 1) { map.setView(pts[0], 13); return; }
-  map.fitBounds(L.latLngBounds(pts), { padding: [60, 60] });
+  map.fitBounds(L.latLngBounds(pts), { padding: [50, 50] });
 }
 
 // ── Data ───────────────────────────────────────────────────────────────────────
-let messages = [];
-
-function updateStats() {
-  const sos = messages.filter(m => m.type === 'SOS');
-  document.getElementById('s-total').textContent   = sos.length;
-  document.getElementById('s-medical').textContent = sos.filter(m => m.emergencyType === 'MEDICAL').length;
-  document.getElementById('s-trapped').textContent = sos.filter(m => m.emergencyType === 'TRAPPED').length;
-  document.getElementById('s-safe').textContent    = sos.filter(m => m.emergencyType === 'SAFE').length;
-  document.getElementById('ib-total').textContent  = sos.length;
-  document.getElementById('ib-geo').textContent    = sos.filter(m => m.payload?.latitude && !(m.payload.latitude === 0 && m.payload.longitude === 0)).length;
-}
+var messages = [];
 
 function fmtAge(ts) {
-  const s = Math.floor((Date.now() - ts) / 1000);
+  var s = Math.floor((Date.now() - ts) / 1000);
   if (s < 60) return s + 's ago';
-  const m = Math.floor(s / 60);
+  var m = Math.floor(s / 60);
   if (m < 60) return m + 'm ago';
   return Math.floor(m / 60) + 'h ago';
 }
 
-function renderCard(msg) {
-  const type = msg.emergencyType ?? msg.type ?? 'SOS';
-  const div  = document.createElement('div');
-  div.className = `alert-card ${type}`;
-  div.id = `card-${msg.messageId}`;
-  div.innerHTML = `
-    <button class="ac-del" onclick="deleteAlert('${msg.messageId}')">✕</button>
-    <div class="ac-header">
-      <span class="ac-type ${type}">${type === 'HEARTBEAT' ? '💓 HB' : '🆘 ' + type}</span>
-      <span class="ac-age">${fmtAge(msg.timestamp)}</span>
-    </div>
-    <div class="ac-name">${msg.senderName ?? 'Unknown'}</div>
-    ${msg.payload?.latitude ? `<div class="ac-coords">📍 ${msg.payload.latitude.toFixed(4)}, ${msg.payload.longitude.toFixed(4)}</div>` : ''}
-    ${msg.payload?.message ? `<div class="ac-msg">"${msg.payload.message}"</div>` : ''}
-    <div class="ac-meta">${Array.isArray(msg.hops) ? msg.hops.length : 0} hops · TTL ${msg.ttl ?? '?'}</div>
-  `;
-  // Click card → pan to marker
-  div.addEventListener('click', e => {
+function updateStats() {
+  var sos = messages.filter(function(m) { return m.type === 'SOS'; });
+  document.getElementById('s-total').textContent   = sos.length;
+  document.getElementById('s-medical').textContent = sos.filter(function(m){ return m.emergencyType === 'MEDICAL'; }).length;
+  document.getElementById('s-trapped').textContent = sos.filter(function(m){ return m.emergencyType === 'TRAPPED'; }).length;
+  document.getElementById('s-safe').textContent    = sos.filter(function(m){ return m.emergencyType === 'SAFE'; }).length;
+  document.getElementById('ib-total').textContent  = sos.length;
+  document.getElementById('ib-geo').textContent    = sos.filter(function(m){ return m.payload && m.payload.latitude && !(m.payload.latitude === 0 && m.payload.longitude === 0); }).length;
+  document.getElementById('feed-count').textContent = messages.length;
+}
+
+function makeCard(msg) {
+  var type = msg.emergencyType || msg.type || 'SOS';
+  var hasGps = msg.payload && msg.payload.latitude && !(msg.payload.latitude === 0 && msg.payload.longitude === 0);
+  var hops   = Array.isArray(msg.hops) ? msg.hops.length : 0;
+
+  var div = document.createElement('div');
+  div.className = 'alert-card ' + type;
+  div.id = 'card-' + msg.messageId;
+  div.innerHTML =
+    '<div class="ac-row">'
+      + '<span class="ac-type ' + type + '">' + (type === 'HEARTBEAT' ? '💓 HEARTBEAT' : '🆘 ' + type) + '</span>'
+      + '<div class="ac-right"><span class="ac-age">' + fmtAge(msg.timestamp) + '</span><button class="ac-del" onclick="deleteAlert(\'' + msg.messageId + '\')">✕</button></div>'
+    + '</div>'
+    + '<div class="ac-name">' + (msg.senderName || 'Unknown') + '</div>'
+    + (hasGps ? '<div class="ac-coords">📍 ' + msg.payload.latitude.toFixed(4) + ', ' + msg.payload.longitude.toFixed(4) + '</div>' : '')
+    + (msg.payload && msg.payload.message ? '<div class="ac-msg">"' + msg.payload.message + '"</div>' : '')
+    + '<div class="ac-meta">'
+      + '<span class="ac-badge">' + hops + ' hops</span>'
+      + '<span class="ac-badge">TTL ' + (msg.ttl || '?') + '</span>'
+      + (hasGps && markers[msg.messageId] ? '<span class="ac-pin">📍 On map</span>' : '')
+    + '</div>';
+
+  div.addEventListener('click', function(e) {
     if (e.target.classList.contains('ac-del')) return;
-    const m = markers[msg.messageId];
+    var m = markers[msg.messageId];
     if (m) { map.setView(m.getLatLng(), 14); m.openPopup(); }
   });
-  div.style.cursor = 'pointer';
   return div;
 }
 
 function renderFeed() {
-  const feed = document.getElementById('feed');
+  var feed = document.getElementById('feed');
   if (messages.length === 0) {
-    feed.innerHTML = `<div class="empty-state"><div class="ei">📭</div><div class="et">No alerts yet</div><div class="eh">Waiting for phone sync...</div></div>`;
+    feed.innerHTML = '<div class="empty-state"><div class="ei">📭</div><div class="et">No alerts yet</div><div class="eh">Waiting for phone sync...</div></div>';
     return;
   }
   feed.innerHTML = '';
-  messages.forEach(msg => feed.appendChild(renderCard(msg)));
+  messages.forEach(function(msg) { feed.appendChild(makeCard(msg)); });
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────────
-async function deleteAlert(id) {
-  try {
-    const r = await authFetch(`/api/sos/${id}`, { method: 'DELETE' });
+function deleteAlert(id) {
+  authFetch('/api/sos/' + id, { method: 'DELETE' }).then(function(r) {
     if (!r.ok) return;
-    messages = messages.filter(m => m.messageId !== id);
+    messages = messages.filter(function(m) { return m.messageId !== id; });
     removeMapMarker(id);
-    document.getElementById(`card-${id}`)?.remove();
+    var card = document.getElementById('card-' + id);
+    if (card) card.remove();
     updateStats();
     if (messages.length === 0) renderFeed();
-  } catch (e) { console.error(e); }
+  });
 }
 
-async function deleteAll() {
-  if (!confirm('Delete ALL alerts from the dashboard?')) return;
-  try {
-    const r = await authFetch('/api/sos', { method: 'DELETE' });
+function deleteAll() {
+  if (!confirm('Delete all alerts from the dashboard?')) return;
+  authFetch('/api/sos', { method: 'DELETE' }).then(function(r) {
     if (!r.ok) return;
     messages = [];
     Object.keys(markers).forEach(removeMapMarker);
     updateStats(); renderFeed();
-  } catch (e) { console.error(e); }
+  });
 }
 
-async function exportCsv() {
+function exportCsv() {
   window.location.href = '/api/sos/export?_token=' + encodeURIComponent(token);
 }
 
 function copyTunnel(el) {
-  navigator.clipboard.writeText(el.textContent).then(() => {
+  navigator.clipboard.writeText(el.textContent).then(function() {
     el.style.color = 'var(--green)';
-    setTimeout(() => el.style.color = '', 1200);
+    setTimeout(function(){ el.style.color = ''; }, 1400);
   });
 }
 
 // ── SSE ────────────────────────────────────────────────────────────────────────
 function connect() {
-  const badge = document.getElementById('conn-badge');
-  const es = new EventSource('/api/events?_token=' + encodeURIComponent(token));
+  var pill = document.getElementById('conn-pill');
+  var es   = new EventSource('/api/events?_token=' + encodeURIComponent(token));
 
-  es.addEventListener('init', e => {
+  es.addEventListener('init', function(e) {
     messages = JSON.parse(e.data);
     messages.forEach(addMapMarker);
     if (messages.length > 0) fitMap();
     updateStats(); renderFeed();
-    badge.textContent = '⬤ Live';
-    badge.className = 'conn-badge connected';
-    document.getElementById('ib-last').textContent = 'Connected ' + new Date().toLocaleTimeString();
+    pill.textContent = '⬤ Connected';
+    pill.className = 'pill pill-conn ok';
+    document.getElementById('ib-last').textContent = '🕐 Connected ' + new Date().toLocaleTimeString();
   });
 
-  es.addEventListener('sos', e => {
-    const msg = JSON.parse(e.data);
-    if (!messages.find(m => m.messageId === msg.messageId)) {
-      messages.unshift(msg);
-      addMapMarker(msg);
-      if (msg.payload?.latitude) map.setView([msg.payload.latitude, msg.payload.longitude], 13);
-      updateStats();
-      // Prepend card with flash
-      const feed = document.getElementById('feed');
-      const card = renderCard(msg);
-      card.style.background = 'rgba(255,59,48,0.08)';
-      setTimeout(() => card.style.background = '', 1500);
-      if (feed.querySelector('.empty-state')) feed.innerHTML = '';
-      feed.prepend(card);
-      document.getElementById('ib-last').textContent = 'Last alert ' + new Date().toLocaleTimeString();
-    }
+  es.addEventListener('sos', function(e) {
+    var msg = JSON.parse(e.data);
+    if (messages.find(function(m){ return m.messageId === msg.messageId; })) return;
+    messages.unshift(msg);
+    addMapMarker(msg);
+    if (msg.payload && msg.payload.latitude) map.setView([msg.payload.latitude, msg.payload.longitude], 13);
+    updateStats();
+
+    var feed = document.getElementById('feed');
+    if (feed.querySelector('.empty-state')) feed.innerHTML = '';
+    var card = makeCard(msg);
+    card.classList.add('new-flash');
+    setTimeout(function(){ card.classList.remove('new-flash'); }, 2000);
+    feed.prepend(card);
+    document.getElementById('feed-count').textContent = messages.length;
+    document.getElementById('ib-last').textContent = '🕐 Last alert ' + new Date().toLocaleTimeString();
   });
 
-  es.addEventListener('delete', e => {
-    const { messageId } = JSON.parse(e.data);
-    messages = messages.filter(m => m.messageId !== messageId);
-    removeMapMarker(messageId);
-    document.getElementById(`card-${messageId}`)?.remove();
+  es.addEventListener('delete', function(e) {
+    var id = JSON.parse(e.data).messageId;
+    messages = messages.filter(function(m){ return m.messageId !== id; });
+    removeMapMarker(id);
+    var card = document.getElementById('card-' + id);
+    if (card) card.remove();
     updateStats();
     if (messages.length === 0) renderFeed();
   });
 
-  es.addEventListener('deleteAll', () => {
+  es.addEventListener('deleteAll', function() {
     messages = [];
     Object.keys(markers).forEach(removeMapMarker);
     updateStats(); renderFeed();
   });
 
-  es.addEventListener('tunnel', e => {
-    const { url } = JSON.parse(e.data);
-    if (url) showTunnel(url);
+  es.addEventListener('tunnel', function(e) {
+    var url = JSON.parse(e.data).url;
+    if (url) {
+      document.getElementById('tunnel-wrap').classList.add('show');
+      document.getElementById('tunnel-url').textContent = url;
+    }
   });
 
-  es.onerror = () => {
-    badge.textContent = '⬤ Reconnecting...';
-    badge.className = 'conn-badge';
-    setTimeout(() => { es.close(); connect(); }, 4000);
+  es.onerror = function() {
+    pill.textContent = '⬤ Reconnecting...';
+    pill.className = 'pill pill-conn';
+    setTimeout(function(){ es.close(); connect(); }, 4000);
   };
 }
 
-function showTunnel(url) {
-  document.getElementById('tunnel-box').classList.add('show');
-  document.getElementById('tunnel-url').textContent = url;
-}
-
-// ── Age refresh every 30s ──────────────────────────────────────────────────────
-setInterval(() => {
-  document.querySelectorAll('.ac-age').forEach((el, i) => {
-    if (messages[i]) el.textContent = fmtAge(messages[i].timestamp);
+// ── Age refresh ────────────────────────────────────────────────────────────────
+setInterval(function() {
+  messages.forEach(function(msg, i) {
+    var card = document.getElementById('card-' + msg.messageId);
+    if (card) {
+      var age = card.querySelector('.ac-age');
+      if (age) age.textContent = fmtAge(msg.timestamp);
+    }
   });
 }, 30000);
 
