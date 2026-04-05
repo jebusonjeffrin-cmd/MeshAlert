@@ -163,12 +163,13 @@ export const MapScreen: React.FC = () => {
       {tab === 'map' && (
         <WebView
           ref={webViewRef}
-          source={{ html: mapHtml }}
+          source={{ html: mapHtml, baseUrl: 'https://openstreetmap.org' }}
           style={styles.map}
           javaScriptEnabled
           domStorageEnabled
           geolocationEnabled
           originWhitelist={['*']}
+          mixedContentMode="always"
           onError={e => console.warn('[Map] WebView error:', e.nativeEvent.description)}
         />
       )}
