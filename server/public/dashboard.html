@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MeshAlert — Command Dashboard</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --red:#FF3B30; --red2:#FF6B63; --blue:#1E88E5; --green:#00C853; --orange:#FF8C00;
+  --purple:#9C27B0; --bg:#070B14; --bg2:#0D1420; --bg3:#111B2C; --surface:#131C2B;
+  --border:#1A2640; --border2:#1E2D42; --text:#E8EDF5; --muted:#5B7A9D; --dim:#2A3D5A;
+}
+html, body { height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; }
+
+/* ══ Topbar ══ */
+.topbar {
+  height: 60px; min-height: 60px;
+  display: flex; align-items: center; padding: 0 24px; gap: 16px;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  z-index: 50;
+}
+.topbar-logo { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 900; color: var(--text); text-decoration: none; margin-right: 8px; }
+.logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.topbar-divider { width: 1px; height: 24px; background: var(--border); }
+.topbar-title { font-size: 14px; font-weight: 700; color: var(--muted); }
+.topbar-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+.live-badge {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(0,200,83,0.1); border: 1px solid rgba(0,200,83,0.2);
+  border-radius: 100px; padding: 5px 12px; font-size: 12px; font-weight: 700; color: #69F0AE;
+}
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: blink 1.5s infinite; }
+.conn-badge {
+  display: flex; align-items: center; gap: 6px;
+  border-radius: 100px; padding: 5px 12px; font-size: 12px; font-weight: 700;
+  background: rgba(255,59,48,0.1); border: 1px solid rgba(255,59,48,0.2); color: var(--red2);
+}
+.conn-badge.connected { background: rgba(0,200,83,0.08); border-color: rgba(0,200,83,0.2); color: #69F0AE; }
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--bg3); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 15px; transition: all 0.2s; color: var(--muted);
+}
+.icon-btn:hover { background: var(--surface); border-color: var(--dim); color: var(--text); }
+.user-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 10px; padding: 6px 12px; font-size: 13px; font-weight: 600;
+}
+.user-avatar {
+  width: 24px; height: 24px; border-radius: 8px; background: var(--red);
+  display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;
+}
+
+/* ══ Layout ══ */
+.layout { display: flex; flex: 1; overflow: hidden; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 260px; min-width: 260px; background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
+.sidebar-label { font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+
+/* Stat cards in sidebar */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stat-card {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 14px 12px;
+  transition: background 0.2s;
+}
+.stat-card:hover { background: var(--surface); }
+.stat-val { font-size: 26px; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+.stat-lbl { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* Tunnel URL box */
+.tunnel-box {
+  display: none;
+  background: rgba(0,200,83,0.06); border: 1px solid rgba(0,200,83,0.2);
+  border-radius: 10px; padding: 12px;
+}
+.tunnel-box.show { display: block; }
+.tunnel-label { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: var(--green); margin-bottom: 6px; text-transform: uppercase; }
+.tunnel-url { font-size: 12px; color: var(--text); font-family: monospace; word-break: break-all; cursor: pointer; }
+.tunnel-url:hover { color: var(--green); }
+
+/* Action buttons */
+.action-btn {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+  padding: 11px 14px; font-size: 13px; font-weight: 700; color: var(--text);
+  cursor: pointer; transition: all 0.2s; text-align: left; margin-bottom: 8px;
+}
+.action-btn:last-child { margin-bottom: 0; }
+.action-btn:hover { background: var(--surface); border-color: var(--dim); }
+.action-btn.danger:hover { border-color: rgba(255,59,48,0.4); color: var(--red2); }
+.action-btn .ab-icon { font-size: 16px; }
+
+/* Feed in sidebar */
+.feed-scroll { flex: 1; overflow-y: auto; padding: 12px; }
+.feed-scroll::-webkit-scrollbar { width: 4px; }
+.feed-scroll::-webkit-scrollbar-track { background: transparent; }
+.feed-scroll::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 4px; }
+
+.alert-card {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 12px;
+  padding: 14px; margin-bottom: 8px; border-left: 3px solid transparent;
+  animation: slideIn 0.35s ease both; position: relative; overflow: hidden;
+}
+@keyframes slideIn { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:none; } }
+.alert-card.MEDICAL { border-left-color: var(--red); }
+.alert-card.TRAPPED { border-left-color: var(--orange); }
+.alert-card.SAFE    { border-left-color: var(--green); }
+.alert-card.HEARTBEAT { border-left-color: var(--blue); }
+.ac-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.ac-type { font-size: 11px; font-weight: 800; letter-spacing: 1px; }
+.ac-type.MEDICAL { color: var(--red); }
+.ac-type.TRAPPED { color: var(--orange); }
+.ac-type.SAFE    { color: var(--green); }
+.ac-type.HEARTBEAT { color: var(--blue); }
+.ac-age { font-size: 11px; color: var(--muted); }
+.ac-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.ac-coords { font-size: 11px; color: var(--muted); font-family: monospace; }
+.ac-msg { font-size: 12px; color: var(--muted); font-style: italic; margin-top: 4px; }
+.ac-meta { font-size: 11px; color: var(--dim); margin-top: 6px; }
+.ac-del {
+  position: absolute; top: 10px; right: 10px;
+  background: none; border: none; cursor: pointer; font-size: 13px;
+  color: var(--muted); opacity: 0; transition: opacity 0.2s;
+}
+.alert-card:hover .ac-del { opacity: 1; }
+.ac-del:hover { color: var(--red); }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 40px 20px; }
+.empty-state .ei { font-size: 36px; margin-bottom: 12px; }
+.empty-state .et { font-size: 14px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+.empty-state .eh { font-size: 12px; color: var(--dim); }
+
+/* ══ Main content ══ */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Map container */
+.map-wrap {
+  flex: 1; position: relative; min-height: 0;
+}
+#map { width: 100%; height: 100%; }
+
+/* Map overlay controls */
+.map-overlay {
+  position: absolute; top: 16px; left: 16px; z-index: 1000;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.map-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(7,11,20,0.88); backdrop-filter: blur(12px);
+  border: 1px solid var(--border); border-radius: 100px;
+  padding: 6px 14px; font-size: 12px; font-weight: 700; color: var(--text);
+}
+.map-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* Bottom info bar */
+.info-bar {
+  height: 44px; min-height: 44px;
+  background: var(--bg2); border-top: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 20px; gap: 24px;
+}
+.info-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.info-item strong { color: var(--text); font-weight: 700; }
+
+/* ══ Leaflet overrides ══ */
+.leaflet-popup-content-wrapper {
+  background: #111B2C !important; color: var(--text) !important;
+  border: 1px solid var(--border) !important; border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+}
+.leaflet-popup-tip { background: #111B2C !important; }
+.leaflet-popup-content { font-family: -apple-system, system-ui, sans-serif !important; margin: 14px 16px !important; }
+.leaflet-popup-content b { color: var(--red) !important; display: block; margin-bottom: 6px; font-size: 13px; letter-spacing: 0.5px; }
+.leaflet-popup-content p { font-size: 12px; color: var(--muted); margin: 3px 0; line-height: 1.5; }
+.leaflet-tile { filter: brightness(0.75) contrast(1.1) saturate(0.7); }
+.leaflet-control-zoom a {
+  background: var(--bg2) !important; color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+.leaflet-control-zoom a:hover { background: var(--bg3) !important; }
+.leaflet-attribution-flag { display: none !important; }
+.leaflet-control-attribution { background: rgba(7,11,20,0.7) !important; color: var(--muted) !important; font-size: 10px !important; }
+
+/* ══ Responsive ══ */
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <a href="/" class="topbar-logo">
+    <div class="logo-dot"></div>
+    MeshAlert
+  </a>
+  <div class="topbar-divider"></div>
+  <span class="topbar-title">Command Dashboard</span>
+
+  <div class="topbar-right">
+    <div class="live-badge"><div class="live-dot"></div> Live</div>
+    <div class="conn-badge" id="conn-badge">⬤ Connecting</div>
+    <button class="icon-btn" onclick="exportCsv()" title="Export CSV">⬇</button>
+    <div class="user-chip">
+      <div class="user-avatar" id="user-avatar">A</div>
+      <span id="user-name">admin</span>
+    </div>
+    <button class="icon-btn" onclick="logout()" title="Sign out">⎋</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+
+    <!-- Stats -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Overview</div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-val" id="s-total" style="color:var(--text)">0</div>
+          <div class="stat-lbl">Total</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="s-medical" style="color:var(--red)">0</div>
+          <div class="stat-lbl">Medical</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="s-trapped" style="color:var(--orange)">0</div>
+          <div class="stat-lbl">Trapped</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="s-safe" style="color:var(--green)">0</div>
+          <div class="stat-lbl">Safe</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tunnel URL -->
+    <div class="sidebar-section">
+      <div class="tunnel-box" id="tunnel-box">
+        <div class="tunnel-label">📱 App Connection URL</div>
+        <div class="tunnel-url" id="tunnel-url" onclick="copyTunnel(this)">—</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px">Tap to copy · Enter in app Settings</div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Actions</div>
+      <button class="action-btn" onclick="fitMap()">
+        <span class="ab-icon">🗺</span> Fit Map to Alerts
+      </button>
+      <button class="action-btn" onclick="exportCsv()">
+        <span class="ab-icon">⬇</span> Export CSV
+      </button>
+      <button class="action-btn danger" onclick="deleteAll()">
+        <span class="ab-icon">🗑</span> Delete All Alerts
+      </button>
+    </div>
+
+    <!-- Live Feed -->
+    <div class="sidebar-section" style="border-bottom:none;flex:0 0 auto">
+      <div class="sidebar-label">Live Feed</div>
+    </div>
+    <div class="feed-scroll" id="feed">
+      <div class="empty-state">
+        <div class="ei">📭</div>
+        <div class="et">No alerts yet</div>
+        <div class="eh">Waiting for phone sync...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Main: Map -->
+  <div class="main">
+    <div class="map-wrap">
+      <div id="map"></div>
+
+      <!-- Map legend overlay -->
+      <div class="map-overlay">
+        <div class="map-chip"><div class="dot" style="background:var(--red)"></div> Medical</div>
+        <div class="map-chip"><div class="dot" style="background:var(--orange)"></div> Trapped</div>
+        <div class="map-chip"><div class="dot" style="background:var(--green)"></div> Safe</div>
+        <div class="map-chip"><div class="dot" style="background:var(--blue)"></div> Heartbeat</div>
+      </div>
+    </div>
+
+    <!-- Info bar -->
+    <div class="info-bar">
+      <div class="info-item">🆘 <strong id="ib-total">0</strong> alerts</div>
+      <div class="info-item">📍 <strong id="ib-geo">0</strong> with GPS</div>
+      <div class="info-item">🔄 <span id="ib-last">—</span></div>
+      <div class="info-item" style="margin-left:auto;font-size:11px;color:var(--dim)">Updates via SSE</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Auth guard ─────────────────────────────────────────────────────────────────
+const token = sessionStorage.getItem('mesh_token');
+if (!token) { window.location.href = '/login.html'; }
+
+async function verifyAuth() {
+  try {
+    const r = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } });
+    if (!r.ok) { sessionStorage.clear(); window.location.href = '/login.html'; return; }
+    const d = await r.json();
+    const name = d.user?.username || sessionStorage.getItem('mesh_user') || 'admin';
+    document.getElementById('user-name').textContent = name;
+    document.getElementById('user-avatar').textContent = name[0].toUpperCase();
+  } catch { /* network error — still allow usage */ }
+}
+
+function logout() {
+  sessionStorage.clear();
+  window.location.href = '/login.html';
+}
+
+function authHeaders() { return { Authorization: 'Bearer ' + token }; }
+function authFetch(url, opts = {}) {
+  return fetch(url, { ...opts, headers: { ...(opts.headers || {}), ...authHeaders() } });
+}
+
+// ── Map ────────────────────────────────────────────────────────────────────────
+const map = L.map('map', {
+  attributionControl: true, zoomControl: true,
+}).setView([20, 0], 2);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '© OpenStreetMap',
+}).addTo(map);
+
+const markers = {};
+
+function markerColor(type) {
+  if (type === 'MEDICAL') return '#FF3B30';
+  if (type === 'TRAPPED') return '#FF8C00';
+  if (type === 'SAFE')    return '#00C853';
+  return '#1E88E5';
+}
+
+function addMapMarker(msg) {
+  const lat = msg.payload?.latitude;
+  const lng = msg.payload?.longitude;
+  if (lat == null || lng == null || (lat === 0 && lng === 0)) return;
+  if (markers[msg.messageId]) return;
+
+  const type  = msg.emergencyType ?? msg.type ?? 'SOS';
+  const color = markerColor(type);
+  const time  = new Date(msg.timestamp).toLocaleTimeString();
+
+  // Custom SVG icon
+  const svgIcon = L.divIcon({
+    html: `<div style="
+      width:32px;height:32px;border-radius:50%;
+      background:${color};border:3px solid rgba(255,255,255,0.25);
+      box-shadow:0 0 0 4px ${color}33,0 4px 12px rgba(0,0,0,0.5);
+      display:flex;align-items:center;justify-content:center;
+      font-size:13px;
+    ">${type === 'MEDICAL' ? '🏥' : type === 'TRAPPED' ? '⚠️' : type === 'SAFE' ? '✅' : '💓'}</div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -20],
+    className: '',
+  });
+
+  const popup = `
+    <b>${type}</b>
+    <p>👤 ${msg.senderName ?? 'Unknown'}</p>
+    ${msg.payload?.bloodGroup ? `<p>🩸 ${msg.payload.bloodGroup}</p>` : ''}
+    ${msg.payload?.message ? `<p>💬 "${msg.payload.message}"</p>` : ''}
+    <p>🕐 ${time} · ${Array.isArray(msg.hops) ? msg.hops.length : 0} hops</p>
+  `;
+
+  const m = L.marker([lat, lng], { icon: svgIcon })
+    .bindPopup(popup, { maxWidth: 240 })
+    .addTo(map);
+  markers[msg.messageId] = m;
+}
+
+function removeMapMarker(id) {
+  if (markers[id]) { map.removeLayer(markers[id]); delete markers[id]; }
+}
+
+function fitMap() {
+  const pts = Object.values(markers).map(m => m.getLatLng());
+  if (pts.length === 0) return;
+  if (pts.length === 1) { map.setView(pts[0], 13); return; }
+  map.fitBounds(L.latLngBounds(pts), { padding: [60, 60] });
+}
+
+// ── Data ───────────────────────────────────────────────────────────────────────
+let messages = [];
+
+function updateStats() {
+  const sos = messages.filter(m => m.type === 'SOS');
+  document.getElementById('s-total').textContent   = sos.length;
+  document.getElementById('s-medical').textContent = sos.filter(m => m.emergencyType === 'MEDICAL').length;
+  document.getElementById('s-trapped').textContent = sos.filter(m => m.emergencyType === 'TRAPPED').length;
+  document.getElementById('s-safe').textContent    = sos.filter(m => m.emergencyType === 'SAFE').length;
+  document.getElementById('ib-total').textContent  = sos.length;
+  document.getElementById('ib-geo').textContent    = sos.filter(m => m.payload?.latitude && !(m.payload.latitude === 0 && m.payload.longitude === 0)).length;
+}
+
+function fmtAge(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return s + 's ago';
+  const m = Math.floor(s / 60);
+  if (m < 60) return m + 'm ago';
+  return Math.floor(m / 60) + 'h ago';
+}
+
+function renderCard(msg) {
+  const type = msg.emergencyType ?? msg.type ?? 'SOS';
+  const div  = document.createElement('div');
+  div.className = `alert-card ${type}`;
+  div.id = `card-${msg.messageId}`;
+  div.innerHTML = `
+    <button class="ac-del" onclick="deleteAlert('${msg.messageId}')">✕</button>
+    <div class="ac-header">
+      <span class="ac-type ${type}">${type === 'HEARTBEAT' ? '💓 HB' : '🆘 ' + type}</span>
+      <span class="ac-age">${fmtAge(msg.timestamp)}</span>
+    </div>
+    <div class="ac-name">${msg.senderName ?? 'Unknown'}</div>
+    ${msg.payload?.latitude ? `<div class="ac-coords">📍 ${msg.payload.latitude.toFixed(4)}, ${msg.payload.longitude.toFixed(4)}</div>` : ''}
+    ${msg.payload?.message ? `<div class="ac-msg">"${msg.payload.message}"</div>` : ''}
+    <div class="ac-meta">${Array.isArray(msg.hops) ? msg.hops.length : 0} hops · TTL ${msg.ttl ?? '?'}</div>
+  `;
+  // Click card → pan to marker
+  div.addEventListener('click', e => {
+    if (e.target.classList.contains('ac-del')) return;
+    const m = markers[msg.messageId];
+    if (m) { map.setView(m.getLatLng(), 14); m.openPopup(); }
+  });
+  div.style.cursor = 'pointer';
+  return div;
+}
+
+function renderFeed() {
+  const feed = document.getElementById('feed');
+  if (messages.length === 0) {
+    feed.innerHTML = `<div class="empty-state"><div class="ei">📭</div><div class="et">No alerts yet</div><div class="eh">Waiting for phone sync...</div></div>`;
+    return;
+  }
+  feed.innerHTML = '';
+  messages.forEach(msg => feed.appendChild(renderCard(msg)));
+}
+
+// ── Actions ────────────────────────────────────────────────────────────────────
+async function deleteAlert(id) {
+  try {
+    const r = await authFetch(`/api/sos/${id}`, { method: 'DELETE' });
+    if (!r.ok) return;
+    messages = messages.filter(m => m.messageId !== id);
+    removeMapMarker(id);
+    document.getElementById(`card-${id}`)?.remove();
+    updateStats();
+    if (messages.length === 0) renderFeed();
+  } catch (e) { console.error(e); }
+}
+
+async function deleteAll() {
+  if (!confirm('Delete ALL alerts from the dashboard?')) return;
+  try {
+    const r = await authFetch('/api/sos', { method: 'DELETE' });
+    if (!r.ok) return;
+    messages = [];
+    Object.keys(markers).forEach(removeMapMarker);
+    updateStats(); renderFeed();
+  } catch (e) { console.error(e); }
+}
+
+async function exportCsv() {
+  window.location.href = '/api/sos/export?_token=' + encodeURIComponent(token);
+}
+
+function copyTunnel(el) {
+  navigator.clipboard.writeText(el.textContent).then(() => {
+    el.style.color = 'var(--green)';
+    setTimeout(() => el.style.color = '', 1200);
+  });
+}
+
+// ── SSE ────────────────────────────────────────────────────────────────────────
+function connect() {
+  const badge = document.getElementById('conn-badge');
+  const es = new EventSource('/api/events?_token=' + encodeURIComponent(token));
+
+  es.addEventListener('init', e => {
+    messages = JSON.parse(e.data);
+    messages.forEach(addMapMarker);
+    if (messages.length > 0) fitMap();
+    updateStats(); renderFeed();
+    badge.textContent = '⬤ Live';
+    badge.className = 'conn-badge connected';
+    document.getElementById('ib-last').textContent = 'Connected ' + new Date().toLocaleTimeString();
+  });
+
+  es.addEventListener('sos', e => {
+    const msg = JSON.parse(e.data);
+    if (!messages.find(m => m.messageId === msg.messageId)) {
+      messages.unshift(msg);
+      addMapMarker(msg);
+      if (msg.payload?.latitude) map.setView([msg.payload.latitude, msg.payload.longitude], 13);
+      updateStats();
+      // Prepend card with flash
+      const feed = document.getElementById('feed');
+      const card = renderCard(msg);
+      card.style.background = 'rgba(255,59,48,0.08)';
+      setTimeout(() => card.style.background = '', 1500);
+      if (feed.querySelector('.empty-state')) feed.innerHTML = '';
+      feed.prepend(card);
+      document.getElementById('ib-last').textContent = 'Last alert ' + new Date().toLocaleTimeString();
+    }
+  });
+
+  es.addEventListener('delete', e => {
+    const { messageId } = JSON.parse(e.data);
+    messages = messages.filter(m => m.messageId !== messageId);
+    removeMapMarker(messageId);
+    document.getElementById(`card-${messageId}`)?.remove();
+    updateStats();
+    if (messages.length === 0) renderFeed();
+  });
+
+  es.addEventListener('deleteAll', () => {
+    messages = [];
+    Object.keys(markers).forEach(removeMapMarker);
+    updateStats(); renderFeed();
+  });
+
+  es.addEventListener('tunnel', e => {
+    const { url } = JSON.parse(e.data);
+    if (url) showTunnel(url);
+  });
+
+  es.onerror = () => {
+    badge.textContent = '⬤ Reconnecting...';
+    badge.className = 'conn-badge';
+    setTimeout(() => { es.close(); connect(); }, 4000);
+  };
+}
+
+function showTunnel(url) {
+  document.getElementById('tunnel-box').classList.add('show');
+  document.getElementById('tunnel-url').textContent = url;
+}
+
+// ── Age refresh every 30s ──────────────────────────────────────────────────────
+setInterval(() => {
+  document.querySelectorAll('.ac-age').forEach((el, i) => {
+    if (messages[i]) el.textContent = fmtAge(messages[i].timestamp);
+  });
+}, 30000);
+
+verifyAuth();
+connect();
+</script>
+</body>
+</html>

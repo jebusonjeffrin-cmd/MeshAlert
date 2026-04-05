@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MeshAlert — Sign In</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --red: #FF3B30; --red2: #FF6B63; --blue: #1E88E5;
+  --bg: #070B14; --bg2: #0D1420; --bg3: #111B2C;
+  --border: #1A2640; --text: #E8EDF5; --muted: #5B7A9D;
+}
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; overflow: hidden;
+}
+
+/* ── Background grid ── */
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0; overflow: hidden;
+  background-image:
+    linear-gradient(rgba(26,38,64,0.4) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26,38,64,0.4) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.bg-glow {
+  position: fixed; top: -200px; left: 50%; transform: translateX(-50%);
+  width: 800px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,59,48,0.06) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+/* ── Card ── */
+.card-wrap {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 420px; padding: 20px;
+}
+
+.logo-link {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  text-decoration: none; margin-bottom: 32px;
+}
+.logo-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red); animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.logo-text { font-size: 22px; font-weight: 900; color: var(--text); }
+
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 32px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03);
+  animation: fadeUp 0.4s ease both;
+}
+@keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:none; } }
+
+.card-title { font-size: 22px; font-weight: 900; letter-spacing: -0.3px; margin-bottom: 6px; }
+.card-sub { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+
+/* Tabs (Login / Setup) */
+.tabs { display: flex; background: var(--bg); border-radius: 10px; padding: 4px; margin-bottom: 28px; }
+.tab-btn {
+  flex: 1; padding: 9px; border-radius: 8px; border: none; background: none;
+  color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: all 0.2s;
+}
+.tab-btn.active { background: var(--bg3); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+
+.form-group { margin-bottom: 16px; }
+label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.5px; margin-bottom: 8px; text-transform: uppercase; }
+input[type="text"], input[type="password"] {
+  width: 100%; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; padding: 13px 16px; color: var(--text); font-size: 15px;
+  outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none;
+}
+input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(30,136,229,0.15); }
+input::placeholder { color: var(--muted); }
+
+.password-wrap { position: relative; }
+.toggle-pw {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; color: var(--muted);
+  font-size: 16px; padding: 4px; line-height: 1;
+}
+
+.submit-btn {
+  width: 100%; background: var(--red); color: #fff; border: none; border-radius: 12px;
+  padding: 14px; font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 8px;
+  transition: all 0.2s; letter-spacing: 0.3px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.submit-btn:hover:not(:disabled) { background: var(--red2); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(255,59,48,0.4); }
+.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.error-msg {
+  display: none; align-items: center; gap: 8px;
+  background: rgba(255,59,48,0.08); border: 1px solid rgba(255,59,48,0.2);
+  border-radius: 10px; padding: 12px 14px; margin-top: 14px;
+  font-size: 13px; color: #FF6B63;
+}
+.error-msg.show { display: flex; }
+
+.hint-msg {
+  display: none; align-items: center; gap: 8px;
+  background: rgba(0,200,83,0.08); border: 1px solid rgba(0,200,83,0.2);
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;
+  font-size: 13px; color: #69F0AE;
+}
+.hint-msg.show { display: flex; }
+
+.back-link { display: block; text-align: center; margin-top: 20px; font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.back-link:hover { color: var(--text); }
+
+/* Spinner */
+.spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<div class="card-wrap">
+  <a href="/" class="logo-link">
+    <div class="logo-dot"></div>
+    <span class="logo-text">MeshAlert</span>
+  </a>
+
+  <div class="card">
+    <h1 class="card-title" id="card-title">Welcome back</h1>
+    <p class="card-sub" id="card-sub">Sign in to the command dashboard</p>
+
+    <div class="tabs" id="tabs">
+      <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
+      <button class="tab-btn" onclick="switchTab('setup')" id="setup-tab">Create Account</button>
+    </div>
+
+    <div class="hint-msg" id="first-time-hint">
+      <span>✨</span>
+      <span>No accounts yet — create the first admin account below.</span>
+    </div>
+
+    <form id="auth-form" onsubmit="handleSubmit(event)">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="Enter username" autocomplete="username" autocapitalize="none" spellcheck="false" />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="password-wrap">
+          <input type="password" id="password" placeholder="Enter password" autocomplete="current-password" />
+          <button type="button" class="toggle-pw" onclick="togglePw()">👁</button>
+        </div>
+      </div>
+      <div class="form-group" id="confirm-group" style="display:none">
+        <label for="confirm">Confirm Password</label>
+        <input type="password" id="confirm" placeholder="Confirm password" autocomplete="new-password" />
+      </div>
+
+      <button type="submit" class="submit-btn" id="submit-btn">
+        <span id="btn-text">Sign In</span>
+      </button>
+
+      <div class="error-msg" id="error-msg">
+        <span>⚠️</span>
+        <span id="error-text">Invalid credentials</span>
+      </div>
+    </form>
+  </div>
+
+  <a href="/" class="back-link">← Back to home</a>
+</div>
+
+<script>
+let currentTab = 'login';
+
+async function checkSetup() {
+  try {
+    const r = await fetch('/api/health');
+    const d = await r.json();
+    if (d.setupRequired) {
+      switchTab('setup');
+      document.getElementById('first-time-hint').classList.add('show');
+      document.getElementById('tabs').style.display = 'none';
+    }
+  } catch {}
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'setup'));
+  });
+  document.getElementById('confirm-group').style.display = tab === 'setup' ? '' : 'none';
+  document.getElementById('card-title').textContent = tab === 'login' ? 'Welcome back' : 'Create account';
+  document.getElementById('card-sub').textContent = tab === 'login'
+    ? 'Sign in to the command dashboard'
+    : 'Set up admin access for the dashboard';
+  document.getElementById('btn-text').textContent = tab === 'login' ? 'Sign In' : 'Create Account';
+  clearError();
+}
+
+function togglePw() {
+  const i = document.getElementById('password');
+  i.type = i.type === 'password' ? 'text' : 'password';
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  document.getElementById('error-text').textContent = msg;
+  el.classList.add('show');
+}
+function clearError() { document.getElementById('error-msg').classList.remove('show'); }
+
+function setLoading(on) {
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = on;
+  btn.innerHTML = on
+    ? '<div class="spinner"></div>'
+    : `<span id="btn-text">${currentTab === 'login' ? 'Sign In' : 'Create Account'}</span>`;
+}
+
+async function handleSubmit(e) {
+  e.preventDefault();
+  clearError();
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!username || !password) return showError('Please fill in all fields');
+
+  if (currentTab === 'setup') {
+    const confirm = document.getElementById('confirm').value;
+    if (password !== confirm) return showError('Passwords do not match');
+    if (password.length < 6) return showError('Password must be at least 6 characters');
+  }
+
+  setLoading(true);
+  try {
+    const endpoint = currentTab === 'login' ? '/api/auth/login' : '/api/auth/setup';
+    const r = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const d = await r.json();
+    if (!r.ok) { showError(d.error || 'Something went wrong'); return; }
+    sessionStorage.setItem('mesh_token', d.token);
+    sessionStorage.setItem('mesh_user', d.username || username);
+    window.location.href = '/dashboard.html';
+  } catch {
+    showError('Connection error — is the server running?');
+  } finally {
+    setLoading(false);
+  }
+}
+
+// Auto-redirect if already logged in
+async function checkToken() {
+  const token = sessionStorage.getItem('mesh_token');
+  if (!token) return checkSetup();
+  try {
+    const r = await fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } });
+    if (r.ok) window.location.href = '/dashboard.html';
+    else { sessionStorage.removeItem('mesh_token'); checkSetup(); }
+  } catch { checkSetup(); }
+}
+
+checkToken();
+</script>
+</body>
+</html>
