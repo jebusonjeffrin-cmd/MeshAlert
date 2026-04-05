@@ -41,7 +41,8 @@ class NearbyService {
     this.localName     = name;
 
     const hasBLE  = !!NearbyConnections;
-    const hasWiFi = !!WifiP2p;
+    // WifiP2p disabled for now — re-enable by changing false to !!WifiP2p
+    const hasWiFi = false;
 
     if (!hasBLE && !hasWiFi) {
       console.error('[Nearby] No native transport modules found — rebuild APK');
@@ -51,10 +52,21 @@ class NearbyService {
     const onConnected = ({ endpointId, endpointName, connectedCount }: any) => {
       const display = endpointName ?? endpointId.slice(-8);
       console.log('[Nearby] ✅ Peer connected:', display, '— total:', connectedCount);
-      this.peers.set(endpointId, {
-        deviceId: endpointId, name: display,
-        rssi: -70, lastSeen: Date.now(),
-      });
+      // Dedup: same physical device can appear via both BLE and WiFi, or via two BLE MACs
+      // due to Android address randomization. If we already have a peer with this exact
+      // name, just update lastSeen. Only dedup when endpointName was explicitly sent
+      // (not the address-slice fallback) to avoid false-positive matches.
+      const existing = endpointName
+        ? Array.from(this.peers.values()).find(p => p.name === endpointName)
+        : null;
+      if (existing) {
+        existing.lastSeen = Date.now();
+      } else {
+        this.peers.set(endpointId, {
+          deviceId: endpointId, name: display,
+          rssi: -70, lastSeen: Date.now(),
+        });
+      }
       this.notifyPeers();
     };
 

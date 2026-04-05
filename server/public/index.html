@@ -46,6 +46,19 @@
   #conn-status { font-size: 12px; color: #64748b; margin-left: auto; display: flex; align-items: center; gap: 6px; }
   .btn-delete { background: none; border: 1px solid #374151; color: #94a3b8; font-size: 11px; padding: 3px 8px; border-radius: 6px; cursor: pointer; margin-left: 8px; }
   .btn-delete:hover { border-color: #dc2626; color: #dc2626; }
+  .btn-export { background: none; border: 1px solid #374151; color: #94a3b8; font-size: 12px; padding: 5px 14px; border-radius: 6px; cursor: pointer; }
+  .btn-export:hover { border-color: #16a34a; color: #16a34a; }
+  /* Login overlay */
+  #login-overlay { display:none; position:fixed; inset:0; background:rgba(10,10,15,0.97); z-index:1000; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+  #login-overlay.visible { display:flex; }
+  #login-box { background:#111118; border:1px solid #1e293b; border-radius:16px; padding:40px 32px; width:320px; text-align:center; }
+  #login-box h2 { color:#fff; font-size:18px; font-weight:800; margin-bottom:8px; }
+  #login-box p { color:#64748b; font-size:13px; margin-bottom:24px; }
+  #login-pw { width:100%; background:#0a0a0f; border:1px solid #1e293b; color:#e2e8f0; font-size:15px; padding:12px 14px; border-radius:8px; outline:none; margin-bottom:12px; }
+  #login-pw:focus { border-color:#3b82f6; }
+  #login-btn { width:100%; background:#3b82f6; color:#fff; font-weight:800; font-size:15px; padding:12px; border-radius:8px; border:none; cursor:pointer; }
+  #login-btn:hover { background:#2563eb; }
+  #login-error { color:#dc2626; font-size:12px; margin-top:8px; min-height:18px; }
   /* Leaflet dark overrides */
   .leaflet-popup-content-wrapper { background: #1c2128; color: #e6edf3; border: 1px solid #30363d; border-radius: 8px; }
   .leaflet-popup-tip { background: #1c2128; }
@@ -53,6 +66,17 @@
 </style>
 </head>
 <body>
+<!-- Login overlay (shown when DASHBOARD_PASSWORD is set) -->
+<div id="login-overlay">
+  <div id="login-box">
+    <h2>MeshAlert Dashboard</h2>
+    <p>Enter the dashboard password to continue</p>
+    <input id="login-pw" type="password" placeholder="Password" autocomplete="current-password" />
+    <button id="login-btn" onclick="submitLogin()">Unlock</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
 <header>
   <div class="status-dot" id="dot"></div>
   <div>
@@ -75,13 +99,73 @@
 </div>
 
 <div class="feed">
-  <h2>Live Feed</h2>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <h2 style="margin-bottom:0">Live Feed</h2>
+    <div style="display:flex;gap:8px">
+      <button class="btn-export" onclick="exportCsv()">⬇ Export CSV</button>
+      <button class="btn-delete" onclick="deleteAll()" style="font-size:12px;padding:5px 14px">🗑 Delete All</button>
+    </div>
+  </div>
   <div id="feed"></div>
 </div>
 
 <script>
   let messages = [];
   const markers = {};
+  let authToken = sessionStorage.getItem('mesh_token') || '';
+
+  // ── Auth ──────────────────────────────────────────────────────────────────────
+  async function checkAuth() {
+    const res = await fetch('/api/health');
+    const d = await res.json();
+    if (d.authRequired && !authToken) {
+      document.getElementById('login-overlay').classList.add('visible');
+      document.getElementById('login-pw').focus();
+    } else {
+      init();
+    }
+  }
+
+  async function submitLogin() {
+    const pw = document.getElementById('login-pw').value;
+    const errEl = document.getElementById('login-error');
+    errEl.textContent = '';
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw }),
+      });
+      if (!res.ok) { errEl.textContent = 'Wrong password'; return; }
+      const d = await res.json();
+      authToken = d.token;
+      sessionStorage.setItem('mesh_token', authToken);
+      document.getElementById('login-overlay').classList.remove('visible');
+      init();
+    } catch (e) { errEl.textContent = 'Connection error'; }
+  }
+
+  document.getElementById('login-pw')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitLogin();
+  });
+
+  function authHeaders() {
+    return authToken ? { 'x-auth-token': authToken } : {};
+  }
+
+  function authFetch(url, opts = {}) {
+    return fetch(url, { ...opts, headers: { ...(opts.headers || {}), ...authHeaders() } });
+  }
+
+  function init() {
+    connect();
+  }
+
+  // ── CSV Export ───────────────────────────────────────────────────────────────
+  async function exportCsv() {
+    const url = '/api/sos/export' + (authToken ? `?_token=${authToken}` : '');
+    window.location.href = url;
+  }
 
   // ── Map ──────────────────────────────────────────────────────────────────────
   const map = L.map('map', { attributionControl: false, zoomControl: true })
@@ -181,10 +265,21 @@
     if (sos) map.setView([sos.payload.latitude, sos.payload.longitude], 13);
   }
 
+  async function deleteAll() {
+    if (!confirm('Delete ALL SOS alerts from the dashboard?')) return;
+    try {
+      const res = await authFetch('/api/sos', { method: 'DELETE' });
+      if (!res.ok) throw new Error('Server error');
+      messages = [];
+      Object.keys(markers).forEach(id => removeMapMarker(id));
+      updateStats(); renderFeed();
+    } catch (e) { alert('Delete All failed: ' + e.message); }
+  }
+
   async function deleteAlert(messageId) {
     if (!confirm('Delete this SOS alert from the dashboard?')) return;
     try {
-      const res = await fetch('/api/sos/' + messageId, { method: 'DELETE' });
+      const res = await authFetch('/api/sos/' + messageId, { method: 'DELETE' });
       if (!res.ok) throw new Error('Server error');
       messages = messages.filter(m => m.messageId !== messageId);
       removeMapMarker(messageId);
@@ -197,7 +292,8 @@
 
   // ── SSE ──────────────────────────────────────────────────────────────────────
   function connect() {
-    const es = new EventSource('/api/events');
+    const sseUrl = '/api/events' + (authToken ? `?_token=${authToken}` : '');
+    const es = new EventSource(sseUrl);
     const status = document.getElementById('conn-status');
     const dot = document.getElementById('dot');
 
@@ -231,6 +327,12 @@
       updateStats(); renderFeed();
     });
 
+    es.addEventListener('deleteAll', () => {
+      messages = [];
+      Object.keys(markers).forEach(id => removeMapMarker(id));
+      updateStats(); renderFeed();
+    });
+
     es.addEventListener('tunnel', e => {
       const { url } = JSON.parse(e.data);
       if (url) showTunnelUrl(url);
@@ -257,7 +359,7 @@
   // Refresh ages every 30s
   setInterval(() => { if (messages.length) renderFeed(); }, 30000);
 
-  connect();
+  checkAuth();
 </script>
 </body>
 </html>

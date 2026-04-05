@@ -25,6 +25,8 @@ export async function requestAllPermissions(): Promise<boolean> {
   if (apiLevel >= 33) {
     // Nearby Connections / WiFi Direct requires this on Android 13+
     toRequest.push('android.permission.NEARBY_WIFI_DEVICES' as any);
+    // Android 13+: required to show foreground service notification
+    toRequest.push('android.permission.POST_NOTIFICATIONS' as any);
   }
 
   try {

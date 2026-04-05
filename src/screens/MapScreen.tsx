@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl,
+  View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Alert, NativeModules,
 } from 'react-native';
 import WebView from 'react-native-webview';
+import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import { storageService } from '../services/StorageService';
 import { nearbyService } from '../services/NearbyService';
 import { locationService } from '../services/LocationService';
 import { MeshMessage, PeerDevice } from '../types';
 import { COLORS } from '../utils/constants';
+import { LEAFLET_CSS, LEAFLET_JS } from '../utils/leafletAssets';
 
 type Tab = 'map' | 'alerts' | 'peers';
 
@@ -33,8 +35,8 @@ function buildMapHtml(myLat: number, myLng: number, alerts: MeshMessage[], peers
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>${LEAFLET_CSS}</style>
+<script>${LEAFLET_JS}</script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html,body,#map { width:100%; height:100%; background:#0D1117; }
@@ -117,6 +119,21 @@ export const MapScreen: React.FC = () => {
     setRefreshing(false);
   }, [loadData]);
 
+  const handleDelete = useCallback(async (messageId: string) => {
+    await storageService.deleteMessage(messageId);
+    setMessages(prev => prev.filter(m => m.messageId !== messageId));
+  }, []);
+
+  const handleDeleteAll = useCallback(() => {
+    Alert.alert('Delete All Alerts', 'Remove all SOS alerts from this device?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete All', style: 'destructive', onPress: async () => {
+        await storageService.clearMessages();
+        setMessages([]);
+      }},
+    ]);
+  }, []);
+
   const lat = myLocation?.latitude ?? 12.9716;
   const lng = myLocation?.longitude ?? 77.5946;
   const mapHtml = buildMapHtml(lat, lng, messages, peers);
@@ -157,16 +174,23 @@ export const MapScreen: React.FC = () => {
       )}
 
       {tab === 'alerts' && (
-        <ScrollView
-          style={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.sos} />}
-        >
-          {messages.length === 0 ? (
-            <EmptyState icon="📭" text="No SOS alerts yet" hint="Pull to refresh" />
-          ) : (
-            messages.map(msg => <AlertCard key={msg.messageId} msg={msg} />)
+        <View style={{ flex: 1 }}>
+          {messages.length > 0 && (
+            <TouchableOpacity style={styles.deleteAllBtn} onPress={handleDeleteAll}>
+              <Text style={styles.deleteAllText}>🗑 Delete All</Text>
+            </TouchableOpacity>
           )}
-        </ScrollView>
+          <ScrollView
+            style={styles.list}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.sos} />}
+          >
+            {messages.length === 0 ? (
+              <EmptyState icon="📭" text="No SOS alerts yet" hint="Pull to refresh" />
+            ) : (
+              messages.map(msg => <AlertCard key={msg.messageId} msg={msg} onDelete={handleDelete} />)
+            )}
+          </ScrollView>
+        </View>
       )}
 
       {tab === 'peers' && (
@@ -182,16 +206,56 @@ export const MapScreen: React.FC = () => {
   );
 };
 
-const AlertCard: React.FC<{ msg: MeshMessage }> = ({ msg }) => {
+const alertAudioPlayer = new AudioRecorderPlayer();
+
+const AlertCard: React.FC<{ msg: MeshMessage; onDelete: (id: string) => void }> = ({ msg, onDelete }) => {
   const age = Date.now() - msg.timestamp;
   const typeColor = msg.emergencyType === 'MEDICAL' ? COLORS.medical
     : msg.emergencyType === 'TRAPPED' ? COLORS.trapped : COLORS.safe;
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const handlePlayAudio = async () => {
+    if (!msg.payload.audioBase64) return;
+    if (isPlaying) {
+      await alertAudioPlayer.stopPlayer();
+      setIsPlaying(false);
+      return;
+    }
+    try {
+      // Write base64 to temp file via ServiceModule, then play
+      const filePath: string = await NativeModules.ServiceModule.writeBase64ToTempFile(
+        msg.payload.audioBase64, 'aac'
+      );
+      setIsPlaying(true);
+      alertAudioPlayer.addPlayBackListener(e => {
+        if (e.isFinished) {
+          alertAudioPlayer.stopPlayer();
+          alertAudioPlayer.removePlayBackListener();
+          setIsPlaying(false);
+        }
+      });
+      await alertAudioPlayer.startPlayer(filePath);
+    } catch (e) {
+      console.warn('[Voice] Playback failed:', e);
+      setIsPlaying(false);
+    }
+  };
 
   return (
     <View style={[styles.card, { borderLeftColor: typeColor, borderLeftWidth: 4 }]}>
       <View style={styles.cardHeader}>
         <Text style={[styles.cardType, { color: typeColor }]}>{msg.emergencyType ?? 'SOS'}</Text>
-        <Text style={styles.cardAge}>{fmtAge(age)}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={styles.cardAge}>{fmtAge(age)}</Text>
+          <TouchableOpacity onPress={() =>
+            Alert.alert('Delete Alert', 'Remove this SOS alert?', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Delete', style: 'destructive', onPress: () => onDelete(msg.messageId) },
+            ])
+          }>
+            <Text style={{ fontSize: 16 }}>🗑</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       <Text style={styles.cardSender}>From: {msg.senderName}</Text>
       {msg.payload.latitude != null && (
@@ -199,6 +263,11 @@ const AlertCard: React.FC<{ msg: MeshMessage }> = ({ msg }) => {
       )}
       {msg.payload.message ? <Text style={styles.cardMessage}>"{msg.payload.message}"</Text> : null}
       {msg.payload.bloodGroup ? <Text style={styles.cardMeta}>🩸 {msg.payload.bloodGroup}</Text> : null}
+      {msg.payload.audioBase64 && (
+        <TouchableOpacity style={styles.playBtn} onPress={handlePlayAudio}>
+          <Text style={styles.playBtnText}>{isPlaying ? '⏹ Stop' : '▶ Play Voice Note'}</Text>
+        </TouchableOpacity>
+      )}
       <Text style={styles.cardHops}>{msg.hops.length} hop{msg.hops.length !== 1 ? 's' : ''} · TTL {msg.ttl} {msg.synced ? '· ✅' : ''}</Text>
     </View>
   );
@@ -273,4 +342,11 @@ const styles = StyleSheet.create({
   cardHops: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
   rssiBg: { height: 4, backgroundColor: COLORS.border, borderRadius: 2, marginVertical: 4 },
   rssiFill: { height: 4, borderRadius: 2 },
+  deleteAllBtn: { margin: 12, marginBottom: 0, padding: 10, backgroundColor: COLORS.surface, borderRadius: 8, borderWidth: 1, borderColor: COLORS.sos, alignItems: 'center' },
+  deleteAllText: { color: COLORS.sos, fontSize: 13, fontWeight: '700' },
+  playBtn: {
+    marginTop: 4, padding: 8, backgroundColor: 'rgba(30,136,229,0.12)',
+    borderRadius: 8, borderWidth: 1, borderColor: COLORS.peer, alignItems: 'center',
+  },
+  playBtnText: { fontSize: 12, color: COLORS.peer, fontWeight: '700' },
 });

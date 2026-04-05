@@ -19,6 +19,7 @@ class MainApplication : Application(), ReactApplication {
             PackageList(this).packages.apply {
               add(NearbyPackage())
               add(WifiP2pPackage())
+              add(ServicePackage())
             }
 
         override fun getJSMainModuleName(): String = "index"

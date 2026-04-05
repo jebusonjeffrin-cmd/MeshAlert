@@ -1,11 +1,33 @@
 const express  = require('express');
 const cors     = require('cors');
 const path     = require('path');
+const crypto   = require('crypto');
 const { Pool } = require('pg');
 const { spawn } = require('child_process');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
+
+// ── Dashboard Password (optional — set DASHBOARD_PASSWORD env var to enable) ──
+const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD || '';
+const validTokens = new Set();   // in-memory session tokens
+
+function generateToken() {
+  const token = crypto.randomBytes(32).toString('hex');
+  validTokens.add(token);
+  return token;
+}
+
+function isAuthenticated(req) {
+  if (!DASHBOARD_PASSWORD) return true;  // No password set → open access
+  const token = req.headers['x-auth-token'] || req.query._token;
+  return token && validTokens.has(token);
+}
+
+function requireAuth(req, res, next) {
+  if (isAuthenticated(req)) return next();
+  res.status(401).json({ error: 'Unauthorized' });
+}
 
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
@@ -114,7 +136,19 @@ function broadcast(event, data) {
 // ── Routes ─────────────────────────────────────────────────────────────────────
 
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, ts: Date.now(), db: !!pool, tunnelUrl: tunnelUrl || null });
+  res.json({ ok: true, ts: Date.now(), db: !!pool, tunnelUrl: tunnelUrl || null, authRequired: !!DASHBOARD_PASSWORD });
+});
+
+// ── Dashboard Auth ─────────────────────────────────────────────────────────────
+
+app.post('/api/auth', (req, res) => {
+  if (!DASHBOARD_PASSWORD) return res.json({ ok: true, token: '' });
+  const { password } = req.body;
+  if (!password || password !== DASHBOARD_PASSWORD) {
+    return res.status(401).json({ error: 'Wrong password' });
+  }
+  const token = generateToken();
+  res.json({ ok: true, token });
 });
 
 app.post('/api/sos', async (req, res) => {
@@ -133,12 +167,40 @@ app.post('/api/sos', async (req, res) => {
   }
 });
 
-app.get('/api/sos', async (req, res) => {
+app.get('/api/sos', requireAuth, async (req, res) => {
   try { res.json(await getAllMessages()); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/sos/:id', async (req, res) => {
+// CSV export
+app.get('/api/sos/export', requireAuth, async (req, res) => {
+  try {
+    const msgs = await getAllMessages();
+    const rows = [
+      ['messageId','senderName','senderId','emergencyType','latitude','longitude','message','bloodGroup','hops','ttl','timestamp'].join(','),
+      ...msgs.map(m => [
+        m.messageId ?? '',
+        `"${(m.senderName ?? '').replace(/"/g, '""')}"`,
+        m.senderId ?? '',
+        m.emergencyType ?? m.type ?? '',
+        m.payload?.latitude ?? '',
+        m.payload?.longitude ?? '',
+        `"${(m.payload?.message ?? '').replace(/"/g, '""')}"`,
+        m.payload?.bloodGroup ?? '',
+        Array.isArray(m.hops) ? m.hops.length : (m.hops ?? 0),
+        m.ttl ?? '',
+        m.timestamp ? new Date(m.timestamp).toISOString() : '',
+      ].join(',')),
+    ].join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="meshalert-${Date.now()}.csv"`);
+    res.send(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/sos/:id', requireAuth, async (req, res) => {
   try {
     await deleteMessage(req.params.id);
     broadcast('delete', { messageId: req.params.id });
@@ -149,7 +211,22 @@ app.delete('/api/sos/:id', async (req, res) => {
   }
 });
 
-app.get('/api/events', async (req, res) => {
+app.delete('/api/sos', requireAuth, async (req, res) => {
+  try {
+    if (pool) {
+      await pool.query('DELETE FROM sos_messages');
+    } else {
+      memStore.length = 0;
+    }
+    broadcast('deleteAll', {});
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[DeleteAll] Error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/events', requireAuth, async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');

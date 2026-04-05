@@ -118,7 +118,7 @@ export const SettingsScreen: React.FC = () => {
         <InfoRow label="Message TTL" value="10 hops" />
         <InfoRow label="Scan interval" value="Every 30s" />
         <InfoRow label="Scan window" value="10s (UUID + name fallback)" />
-        <InfoRow label="Heartbeat" value="Every 60s" />
+        <InfoRow label="Heartbeat" value="Every 5 min" />
         <InfoRow label="Shake trigger" value="3× in 2s window" />
       </View>
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, Alert, TextInput, Animated,
+  View, Text, ScrollView, StyleSheet, Alert, TextInput, Animated, NativeModules,
+  TouchableOpacity,
 } from 'react-native';
 import { SOSButton } from '../components/SOSButton';
 import { EmergencyTypeSelector } from '../components/EmergencyTypeSelector';
@@ -15,6 +16,7 @@ import { syncService } from '../services/SyncService';
 import { COLORS, MESH_TTL_START } from '../utils/constants';
 import { requestAllPermissions } from '../utils/permissions';
 import DeviceInfo from 'react-native-device-info';
+import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 
 export const HomeScreen: React.FC = () => {
   const [selectedType, setSelectedType] = useState<EmergencyType>('MEDICAL');
@@ -27,8 +29,12 @@ export const HomeScreen: React.FC = () => {
   const [statusOk, setStatusOk] = useState(false);
   const [lastHeartbeat, setLastHeartbeat] = useState<number | null>(null);
   const [relayedCount, setRelayedCount] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBase64, setAudioBase64] = useState<string | undefined>(undefined);
+  const [recordSecs, setRecordSecs] = useState(0);
   const profile = useRef<UserProfile | null>(null);
   const sosRef = useRef<(fromShake?: boolean) => void>(() => {});
+  const audioRecorder = useRef(new AudioRecorderPlayer()).current;
 
   // Animation values
   const fadeAnim   = useRef(new Animated.Value(0)).current;
@@ -88,6 +94,14 @@ export const HomeScreen: React.FC = () => {
       setStatusText('Requesting permissions...');
       await requestAllPermissions();
 
+      // Start foreground service to keep BLE alive when screen is off
+      try {
+        NativeModules.ServiceModule?.startService();
+        NativeModules.ServiceModule?.requestBatteryExemption();
+      } catch (e) {
+        console.warn('[Home] ServiceModule not available:', e);
+      }
+
       await storageService.initialize();
       const savedProfile = await storageService.getProfile();
       profile.current = savedProfile;
@@ -130,6 +144,44 @@ export const HomeScreen: React.FC = () => {
 
   useEffect(() => { sosRef.current = handleSOS; }, [handleSOS]);
 
+  const startRecording = async () => {
+    try {
+      setAudioBase64(undefined);
+      setRecordSecs(0);
+      audioRecorder.addRecordBackListener(e => setRecordSecs(Math.floor(e.currentPosition / 1000)));
+      await audioRecorder.startRecorder();
+      setIsRecording(true);
+    } catch (e) {
+      console.warn('[Voice] Start record failed:', e);
+    }
+  };
+
+  const stopRecording = async () => {
+    try {
+      const filePath = await audioRecorder.stopRecorder();
+      audioRecorder.removeRecordBackListener();
+      setIsRecording(false);
+      setRecordSecs(0);
+      // Read file → base64 via fetch + FileReader
+      const uri = filePath.startsWith('file://') ? filePath : `file://${filePath}`;
+      const resp = await fetch(uri);
+      const blob = await resp.blob();
+      const b64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      setAudioBase64(b64);
+      console.log('[Voice] Recorded, base64 length:', b64.length);
+    } catch (e) {
+      console.warn('[Voice] Stop record failed:', e);
+      setIsRecording(false);
+    }
+  };
+
+  const clearRecording = () => { setAudioBase64(undefined); setRecordSecs(0); };
+
   const doSend = async (type: EmergencyType) => {
     setIsSending(true); setSosActive(true); setStatusText('Broadcasting SOS...');
     try {
@@ -137,7 +189,7 @@ export const HomeScreen: React.FC = () => {
       await meshService.sendSOS(type, message || undefined, {
         bloodGroup: p?.bloodGroup, emergencyContacts: p?.emergencyContacts,
         medicalConditions: p?.medicalConditions, allergies: p?.allergies,
-      });
+      }, audioBase64);
       const peers = nearbyService.getPeerCount();
       setStatusText(peers > 0 ? `SOS sent to ${peers} peer(s)` : 'SOS stored — syncing when online');
       const { synced } = await syncService.triggerSync();
@@ -247,6 +299,29 @@ export const HomeScreen: React.FC = () => {
         />
       </Animated.View>
 
+      {/* Voice SOS */}
+      <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
+        <Text style={styles.sectionLabel}>Voice Note (optional)</Text>
+        <View style={styles.voiceRow}>
+          <TouchableOpacity
+            style={[styles.micBtn, isRecording && styles.micBtnActive]}
+            onPressIn={startRecording}
+            onPressOut={stopRecording}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.micIcon}>{isRecording ? '⏹' : '🎙'}</Text>
+            <Text style={styles.micLabel}>
+              {isRecording ? `Recording... ${recordSecs}s` : 'Hold to record'}
+            </Text>
+          </TouchableOpacity>
+          {audioBase64 && (
+            <TouchableOpacity style={styles.clearVoiceBtn} onPress={clearRecording}>
+              <Text style={styles.clearVoiceText}>✓ Voice note attached  ✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </Animated.View>
+
       {/* Hint */}
       <Animated.View style={[styles.hint, { opacity: fadeAnim }]}>
         <Text style={styles.hintText}>📳 Shake 3× for instant SOS</Text>
@@ -319,4 +394,18 @@ const styles = StyleSheet.create({
     borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, borderStyle: 'dashed', gap: 6,
   },
   hintText: { fontSize: 12, color: COLORS.textMuted, textAlign: 'center' },
+  voiceRow: { gap: 8 },
+  micBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: COLORS.surface, borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: COLORS.border,
+  },
+  micBtnActive: { borderColor: COLORS.sos, backgroundColor: 'rgba(255,59,48,0.08)' },
+  micIcon: { fontSize: 22 },
+  micLabel: { fontSize: 13, color: COLORS.text, fontWeight: '600' },
+  clearVoiceBtn: {
+    padding: 10, backgroundColor: 'rgba(67,160,71,0.12)',
+    borderRadius: 10, borderWidth: 1, borderColor: COLORS.safe, alignItems: 'center',
+  },
+  clearVoiceText: { fontSize: 12, color: COLORS.safe, fontWeight: '700' },
 });
