@@ -10,6 +10,25 @@ import DeviceInfo from 'react-native-device-info';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
+// Catches native crashes from react-native-svg / react-native-qrcode-svg
+class QRErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { err: boolean }
+> {
+  constructor(p: any) { super(p); this.state = { err: false }; }
+  static getDerivedStateFromError() { return { err: true }; }
+  render() {
+    if (this.state.err) {
+      return (
+        <Text style={{ fontSize: 12, color: COLORS.textMuted, textAlign: 'center', marginTop: 12 }}>
+          QR code unavailable on this device
+        </Text>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export const ProfileScreen: React.FC = () => {
   const [name, setName] = useState('');
   const [bloodGroup, setBloodGroup] = useState('');
@@ -21,6 +40,7 @@ export const ProfileScreen: React.FC = () => {
 
   const loadProfile = useCallback(async () => {
     try {
+      await storageService.initialize();
       const profile = await storageService.getProfile();
       if (profile) {
         setName(profile.name ?? '');
@@ -84,18 +104,20 @@ export const ProfileScreen: React.FC = () => {
             <Text style={styles.qrLabel}>QR Identity Card</Text>
             <Text style={styles.qrHint}>Show this to first responders</Text>
             <View style={styles.qrWrapper}>
-              <QRCode
-                value={JSON.stringify({
-                  deviceId,
-                  name: name.trim(),
-                  bloodGroup: bloodGroup || undefined,
-                  medicalConditions: medicalConditions.trim() || undefined,
-                  allergies: allergies.trim() || undefined,
-                })}
-                size={180}
-                backgroundColor={COLORS.surface}
-                color={COLORS.text}
-              />
+              <QRErrorBoundary>
+                <QRCode
+                  value={JSON.stringify({
+                    deviceId,
+                    name: name.trim(),
+                    bloodGroup: bloodGroup || undefined,
+                    medicalConditions: medicalConditions.trim() || undefined,
+                    allergies: allergies.trim() || undefined,
+                  })}
+                  size={180}
+                  backgroundColor={COLORS.surface}
+                  color={COLORS.text}
+                />
+              </QRErrorBoundary>
             </View>
           </View>
         )}

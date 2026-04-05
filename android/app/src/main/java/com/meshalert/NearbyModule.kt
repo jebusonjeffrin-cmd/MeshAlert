@@ -2,7 +2,10 @@ package com.meshalert
 
 import android.bluetooth.*
 import android.bluetooth.le.*
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelUuid
@@ -58,6 +61,8 @@ class NearbyModule(private val reactContext: ReactApplicationContext) :
     private val peerNames  = ConcurrentHashMap<String, String>()
     // addresses currently being connected (prevent duplicate connect)
     private val connecting = ConcurrentHashMap.newKeySet<String>()
+    // BT state receiver — clears peers when BT is turned off
+    private var btStateReceiver: BroadcastReceiver? = null
 
     private val allPeerAddrs get() = (outConns.keys.toSet() + inValidated.toSet())
     private val peerCount    get() = allPeerAddrs.size
@@ -246,10 +251,16 @@ class NearbyModule(private val reactContext: ReactApplicationContext) :
     @ReactMethod
     fun start(deviceName: String, promise: Promise) {
         localName = deviceName
+        if (!btAdap.isEnabled) {
+            android.util.Log.w("BleModule", "start() called but Bluetooth is off — aborting")
+            promise.reject("BT_DISABLED", "Bluetooth is disabled")
+            return
+        }
         try {
             openGattServer()
             startAdvertising()
             startScanning()
+            registerBtStateReceiver()
             android.util.Log.d("BleModule", "✅ Pure-BLE transport started as: $deviceName")
             promise.resolve(true)
         } catch (e: Exception) {
@@ -296,6 +307,7 @@ class NearbyModule(private val reactContext: ReactApplicationContext) :
     @ReactMethod
     fun stop(promise: Promise) {
         try {
+            unregisterBtStateReceiver()
             advCb?.let { btAdap.bluetoothLeAdvertiser?.stopAdvertising(it) }
             bleScan?.stopScan(scanCb)
             outConns.values.forEach { it.disconnect(); it.close() }
@@ -414,6 +426,45 @@ class NearbyModule(private val reactContext: ReactApplicationContext) :
             scanCb
         )
         android.util.Log.d("BleModule", "✅ BLE scanning started")
+    }
+
+    private fun registerBtStateReceiver() {
+        if (btStateReceiver != null) return // already registered
+        btStateReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
+                if (state == BluetoothAdapter.STATE_TURNING_OFF || state == BluetoothAdapter.STATE_OFF) {
+                    android.util.Log.w("BleModule", "Bluetooth turning off — clearing all peers")
+                    // Snapshot current peers before clearing
+                    val peersToNotify = allPeerAddrs.toSet()
+                    // Close all outgoing GATT connections
+                    outConns.values.forEach { try { it.disconnect(); it.close() } catch (_: Exception) {} }
+                    outConns.clear()
+                    inConns.clear()
+                    inValidated.clear()
+                    connecting.clear()
+                    // Emit disconnect for each peer so JS count drops to 0
+                    peersToNotify.forEach { addr ->
+                        android.util.Log.d("BleModule", "BT off — evicting peer $addr")
+                        emitDisconnected(addr)
+                    }
+                    peerNames.clear()
+                }
+            }
+        }
+        reactContext.registerReceiver(
+            btStateReceiver,
+            IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+        )
+        android.util.Log.d("BleModule", "BT state receiver registered")
+    }
+
+    private fun unregisterBtStateReceiver() {
+        btStateReceiver?.let {
+            try { reactContext.unregisterReceiver(it) } catch (_: Exception) {}
+            btStateReceiver = null
+            android.util.Log.d("BleModule", "BT state receiver unregistered")
+        }
     }
 
     private fun emitConnected(addr: String, name: String) =
