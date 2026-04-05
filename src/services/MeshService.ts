@@ -56,6 +56,7 @@ class MeshService {
     emergencyType: EmergencyType,
     textMessage?: string,
     profile?: { bloodGroup?: BloodGroup; emergencyContacts?: string[]; medicalConditions?: string; allergies?: string },
+    audioBase64?: string,
   ): Promise<boolean> {
     const loc = await locationService.getCurrentLocation();
     if (!loc) console.warn('[Mesh] No location for SOS');
@@ -74,6 +75,7 @@ class MeshService {
         emergencyContacts: profile?.emergencyContacts,
         medicalConditions: profile?.medicalConditions,
         allergies: profile?.allergies,
+        audioBase64,
       },
       ttl: MESH_TTL_START,
       timestamp: Date.now(),

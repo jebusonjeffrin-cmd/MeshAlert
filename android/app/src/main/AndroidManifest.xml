@@ -31,6 +31,10 @@
     <!-- Background services -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Android 13+: required to post foreground service notification -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Nearby Connections API — WiFi Direct + BLE mesh -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
@@ -60,5 +64,21 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <!-- Foreground service that keeps BLE mesh alive when screen is off -->
+      <service
+        android:name=".MeshForegroundService"
+        android:foregroundServiceType="connectedDevice"
+        android:exported="false" />
+
+      <!-- Restart service after device reboot -->
+      <receiver
+        android:name=".BootReceiver"
+        android:exported="true">
+        <intent-filter>
+          <action android:name="android.intent.action.BOOT_COMPLETED" />
+          <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+        </intent-filter>
+      </receiver>
     </application>
 </manifest>

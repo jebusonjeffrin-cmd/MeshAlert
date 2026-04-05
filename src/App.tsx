@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, StatusBar } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { HomeScreen } from './screens/HomeScreen';
@@ -7,6 +8,7 @@ import { MapScreen } from './screens/MapScreen';
 import { MeshScreen } from './screens/MeshScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { OnboardingScreen } from './screens/OnboardingScreen';
 import { COLORS } from './utils/constants';
 
 const Tab = createBottomTabNavigator();
@@ -48,6 +50,26 @@ const eb = StyleSheet.create({
 });
 
 export default function App(): React.JSX.Element {
+  const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem('onboarding_done').then(val => {
+      setOnboardingDone(val === 'true');
+    });
+  }, []);
+
+  // While checking AsyncStorage, show nothing (splash handles it)
+  if (onboardingDone === null) return <View style={{ flex: 1, backgroundColor: COLORS.background }} />;
+
+  if (!onboardingDone) {
+    return (
+      <ErrorBoundary>
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+        <OnboardingScreen onComplete={() => setOnboardingDone(true)} />
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
@@ -61,9 +83,7 @@ export default function App(): React.JSX.Element {
             },
             tabBarActiveTintColor: COLORS.sos,
             tabBarInactiveTintColor: COLORS.textMuted,
-            headerStyle: { backgroundColor: COLORS.surface, borderBottomColor: COLORS.border, borderBottomWidth: 1 },
-            headerTintColor: COLORS.text,
-            headerTitleStyle: { fontWeight: '800' },
+            headerShown: false,
           }}
         >
           <Tab.Screen

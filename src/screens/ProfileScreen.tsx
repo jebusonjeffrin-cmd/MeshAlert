@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, Alert,
 } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 import { storageService } from '../services/StorageService';
 import { UserProfile } from '../types';
 import { COLORS } from '../utils/constants';
@@ -76,6 +77,28 @@ export const ProfileScreen: React.FC = () => {
           maxLength={40}
         />
         <Text style={styles.deviceId}>Device ID: {deviceId ? deviceId.slice(-12) : '...'}</Text>
+
+        {/* QR Code — scan to share identity with first responders */}
+        {name.trim().length > 0 && deviceId.length > 0 && (
+          <View style={styles.qrContainer}>
+            <Text style={styles.qrLabel}>QR Identity Card</Text>
+            <Text style={styles.qrHint}>Show this to first responders</Text>
+            <View style={styles.qrWrapper}>
+              <QRCode
+                value={JSON.stringify({
+                  deviceId,
+                  name: name.trim(),
+                  bloodGroup: bloodGroup || undefined,
+                  medicalConditions: medicalConditions.trim() || undefined,
+                  allergies: allergies.trim() || undefined,
+                })}
+                size={180}
+                backgroundColor={COLORS.surface}
+                color={COLORS.text}
+              />
+            </View>
+          </View>
+        )}
       </View>
 
       <View style={styles.section}>
@@ -161,6 +184,13 @@ const styles = StyleSheet.create({
   },
   multiline: { minHeight: 70, textAlignVertical: 'top' },
   deviceId: { fontSize: 11, color: COLORS.textMuted, marginTop: 6, fontFamily: 'monospace' },
+  qrContainer: { marginTop: 20, alignItems: 'center' },
+  qrLabel: { fontSize: 13, fontWeight: '800', color: COLORS.text, marginBottom: 2 },
+  qrHint: { fontSize: 11, color: COLORS.textMuted, marginBottom: 12 },
+  qrWrapper: {
+    padding: 16, backgroundColor: COLORS.surface,
+    borderRadius: 12, borderWidth: 1, borderColor: COLORS.border,
+  },
   bloodRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   bgChip: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8,
