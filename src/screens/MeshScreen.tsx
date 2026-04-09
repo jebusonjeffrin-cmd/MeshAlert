@@ -44,22 +44,30 @@ export const MeshScreen: React.FC = () => {
     setRefreshing(false);
   }, [loadMessages]);
 
+  const sosMsgs = messages.filter(m => m.type === 'SOS');
+  const heartbeats = messages.filter(m => m.type === 'HEARTBEAT');
+
   return (
     <View style={styles.screen}>
       {/* Stats row */}
       <View style={styles.statsRow}>
-        <StatChip label="Relayed" value={relayedCount} color={COLORS.peer} />
-        <StatChip label="Peers" value={peers.length} color={COLORS.safe} />
-        <StatChip label="Stored" value={messages.length} color={COLORS.textMuted} />
+        <StatChip label="Relayed" value={relayedCount} color={COLORS.peer} icon="↗" />
+        <View style={styles.statDivider} />
+        <StatChip label="Peers" value={peers.length} color={COLORS.safe} icon="📡" />
+        <View style={styles.statDivider} />
+        <StatChip label="SOS" value={sosMsgs.length} color={COLORS.sos} icon="🆘" />
+        <View style={styles.statDivider} />
+        <StatChip label="Heartbeats" value={heartbeats.length} color={COLORS.textMuted} icon="💓" />
       </View>
 
+      {/* Tab bar */}
       <View style={styles.tabBar}>
         <TouchableOpacity
           style={[styles.tab, tab === 'messages' && styles.tabActive]}
           onPress={() => setTab('messages')}
         >
           <Text style={[styles.tabText, tab === 'messages' && styles.tabTextActive]}>
-            Messages
+            Messages {messages.length > 0 ? `(${messages.length})` : ''}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -67,7 +75,7 @@ export const MeshScreen: React.FC = () => {
           onPress={() => setTab('peers')}
         >
           <Text style={[styles.tabText, tab === 'peers' && styles.tabTextActive]}>
-            Live Peers
+            Live Peers {peers.length > 0 ? `(${peers.length})` : ''}
           </Text>
         </TouchableOpacity>
       </View>
@@ -78,7 +86,7 @@ export const MeshScreen: React.FC = () => {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.peer} />}
         >
           {messages.length === 0 ? (
-            <EmptyState icon="📭" text="No messages yet" hint="Messages appear when SOS/heartbeat packets are relayed" />
+            <EmptyState icon="📭" text="No messages yet" hint="Messages appear when SOS or heartbeat packets are relayed through this device" />
           ) : (
             messages.map(msg => <MessageRow key={msg.messageId} msg={msg} />)
           )}
@@ -86,7 +94,7 @@ export const MeshScreen: React.FC = () => {
       ) : (
         <ScrollView style={styles.list}>
           {peers.length === 0 ? (
-            <EmptyState icon="📡" text="No active peers" hint="Peers appear during BLE scan" />
+            <EmptyState icon="📡" text="No active peers" hint="Peers appear when other MeshAlert devices are in BLE range" />
           ) : (
             peers.map(peer => <PeerRow key={peer.deviceId} peer={peer} />)
           )}
@@ -96,7 +104,7 @@ export const MeshScreen: React.FC = () => {
   );
 };
 
-const StatChip: React.FC<{ label: string; value: number; color: string }> = ({ label, value, color }) => (
+const StatChip: React.FC<{ label: string; value: number; color: string; icon: string }> = ({ label, value, color, icon }) => (
   <View style={styles.statChip}>
     <Text style={[styles.statValue, { color }]}>{value}</Text>
     <Text style={styles.statLabel}>{label}</Text>
@@ -107,40 +115,62 @@ const MessageRow: React.FC<{ msg: MeshMessage }> = ({ msg }) => {
   const typeColor = msg.emergencyType === 'MEDICAL' ? COLORS.medical
     : msg.emergencyType === 'TRAPPED' ? COLORS.trapped
     : msg.type === 'HEARTBEAT' ? COLORS.peer
-    : COLORS.safe;
+    : msg.type === 'ACK' ? COLORS.safe
+    : COLORS.sos;
   const age = Date.now() - msg.timestamp;
+  const typeLabel = msg.type === 'HEARTBEAT' ? '💓 HEARTBEAT'
+    : msg.type === 'ACK' ? '✅ ACK'
+    : `🆘 ${msg.emergencyType ?? 'SOS'}`;
 
   return (
-    <View style={[styles.row, { borderLeftColor: typeColor, borderLeftWidth: 3 }]}>
+    <View style={[styles.row, { borderLeftColor: typeColor }]}>
       <View style={styles.rowHeader}>
-        <Text style={[styles.rowType, { color: typeColor }]}>
-          {msg.type === 'HEARTBEAT' ? '💓 HEARTBEAT' : `🆘 ${msg.emergencyType ?? 'SOS'}`}
-        </Text>
+        <View style={[styles.rowTypeBadge, { backgroundColor: typeColor + '18', borderColor: typeColor + '40' }]}>
+          <Text style={[styles.rowType, { color: typeColor }]}>{typeLabel}</Text>
+        </View>
         <Text style={styles.rowAge}>{fmtAge(age)}</Text>
       </View>
-      <Text style={styles.rowSender}>{msg.senderName} · {msg.senderId.slice(-6)}</Text>
-      {msg.payload.message ? <Text style={styles.rowMsg}>"{msg.payload.message}"</Text> : null}
-      <Text style={styles.rowMeta}>{msg.hops.length} hops · TTL {msg.ttl}{msg.synced ? ' · ✅ synced' : ''}</Text>
+      <Text style={styles.rowSender}>{msg.senderName}
+        <Text style={styles.rowSenderId}> ·{msg.senderId.slice(-6)}</Text>
+      </Text>
+      {msg.payload.message ? (
+        <Text style={styles.rowMsg}>"{msg.payload.message}"</Text>
+      ) : null}
+      {msg.payload.audioBase64 ? (
+        <Text style={styles.rowAudio}>🎙 Voice note attached</Text>
+      ) : null}
+      <View style={styles.rowFooter}>
+        <Text style={styles.rowMeta}>{msg.hops.length} hop{msg.hops.length !== 1 ? 's' : ''}</Text>
+        <Text style={styles.rowMeta}>TTL {msg.ttl}</Text>
+        {msg.synced && <Text style={[styles.rowMeta, { color: COLORS.safe }]}>✅ synced</Text>}
+      </View>
     </View>
   );
 };
 
 const PeerRow: React.FC<{ peer: PeerDevice }> = ({ peer }) => {
   const age = Date.now() - peer.lastSeen;
-  const rssiBar = Math.max(0, Math.min(100, ((peer.rssi + 100) / 60) * 100));
+  const rssiPct = Math.max(0, Math.min(100, ((peer.rssi + 100) / 60) * 100));
+  const signalColor = peer.rssi > -60 ? COLORS.safe : peer.rssi > -80 ? COLORS.trapped : COLORS.sos;
 
   return (
     <View style={styles.row}>
       <View style={styles.rowHeader}>
-        <Text style={styles.rowSender}>{peer.name}</Text>
-        <Text style={styles.rowAge}>{peer.rssi} dBm</Text>
+        <View style={styles.peerNameRow}>
+          <View style={[styles.peerOnline, { backgroundColor: signalColor }]} />
+          <Text style={styles.rowSender}>{peer.name}</Text>
+        </View>
+        <Text style={[styles.rowType, { color: signalColor }]}>{peer.rssi} dBm</Text>
       </View>
       <View style={styles.rssiBarBg}>
-        <View style={[styles.rssiBarFill, { width: `${rssiBar}%` }]} />
+        <View style={[styles.rssiBarFill, { width: `${rssiPct}%`, backgroundColor: signalColor }]} />
       </View>
-      {peer.distanceMetres != null && (
-        <Text style={styles.rowMeta}>~{Math.round(peer.distanceMetres)}m · seen {fmtAge(age)}</Text>
-      )}
+      <View style={styles.rowFooter}>
+        {peer.distanceMetres != null && (
+          <Text style={styles.rowMeta}>~{Math.round(peer.distanceMetres)}m away</Text>
+        )}
+        <Text style={styles.rowMeta}>seen {fmtAge(age)}</Text>
+      </View>
     </View>
   );
 };
@@ -155,41 +185,62 @@ const EmptyState: React.FC<{ icon: string; text: string; hint: string }> = ({ ic
 
 function fmtAge(ms: number): string {
   const s = Math.floor(ms / 1000);
-  if (s < 60) return `${s}s`;
+  if (s < 60) return `${s}s ago`;
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m`;
-  return `${Math.floor(m / 60)}h`;
+  if (m < 60) return `${m}m ago`;
+  return `${Math.floor(m / 60)}h ago`;
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.background },
+
   statsRow: {
     flexDirection: 'row', backgroundColor: COLORS.surface,
     borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    paddingVertical: 4,
   },
-  statChip: { flex: 1, alignItems: 'center', paddingVertical: 12 },
-  statValue: { fontSize: 20, fontWeight: '800' },
-  statLabel: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
-  tabBar: { flexDirection: 'row', backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  statChip: { flex: 1, alignItems: 'center', paddingVertical: 10 },
+  statValue: { fontSize: 22, fontWeight: '900' },
+  statLabel: { fontSize: 10, color: COLORS.textMuted, marginTop: 2, fontWeight: '700', letterSpacing: 0.3 },
+  statDivider: { width: 1, backgroundColor: COLORS.border, marginVertical: 8 },
+
+  tabBar: {
+    flexDirection: 'row', backgroundColor: COLORS.surface,
+    borderBottomWidth: 1, borderBottomColor: COLORS.border,
+  },
   tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
   tabActive: { borderBottomWidth: 2, borderBottomColor: COLORS.peer },
   tabText: { fontSize: 13, fontWeight: '600', color: COLORS.textMuted },
   tabTextActive: { color: COLORS.text },
+
   list: { flex: 1 },
+
   row: {
-    backgroundColor: COLORS.surface, marginHorizontal: 16, marginTop: 10,
-    borderRadius: 8, padding: 12, borderWidth: 1, borderColor: COLORS.border, gap: 3,
+    backgroundColor: COLORS.surface, marginHorizontal: 14, marginTop: 10,
+    borderRadius: 12, padding: 14, borderWidth: 1, borderColor: COLORS.border,
+    borderLeftWidth: 3, gap: 6,
   },
-  rowHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-  rowType: { fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
+  rowHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  rowTypeBadge: {
+    borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3,
+    borderWidth: 1,
+  },
+  rowType: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
   rowAge: { fontSize: 11, color: COLORS.textMuted },
-  rowSender: { fontSize: 13, color: COLORS.text, fontWeight: '600' },
-  rowMsg: { fontSize: 12, color: COLORS.textMuted, fontStyle: 'italic' },
-  rowMeta: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
-  rssiBarBg: { height: 4, backgroundColor: COLORS.border, borderRadius: 2, marginVertical: 4 },
-  rssiBarFill: { height: 4, backgroundColor: COLORS.peer, borderRadius: 2 },
-  empty: { alignItems: 'center', paddingTop: 80, gap: 8 },
-  emptyIcon: { fontSize: 40 },
-  emptyText: { fontSize: 15, color: COLORS.text, fontWeight: '600' },
-  emptyHint: { fontSize: 12, color: COLORS.textMuted, textAlign: 'center', paddingHorizontal: 40 },
+  rowSender: { fontSize: 14, color: COLORS.text, fontWeight: '700' },
+  rowSenderId: { fontSize: 12, color: COLORS.textMuted, fontWeight: '400', fontFamily: 'monospace' },
+  rowMsg: { fontSize: 12, color: COLORS.textMuted, fontStyle: 'italic', lineHeight: 18 },
+  rowAudio: { fontSize: 11, color: COLORS.peer, fontWeight: '600' },
+  rowFooter: { flexDirection: 'row', gap: 10 },
+  rowMeta: { fontSize: 11, color: COLORS.textMuted },
+
+  peerNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  peerOnline: { width: 8, height: 8, borderRadius: 4 },
+  rssiBarBg: { height: 4, backgroundColor: COLORS.border, borderRadius: 2 },
+  rssiBarFill: { height: 4, borderRadius: 2 },
+
+  empty: { alignItems: 'center', paddingTop: 80, gap: 12, paddingHorizontal: 40 },
+  emptyIcon: { fontSize: 52 },
+  emptyText: { fontSize: 16, color: COLORS.text, fontWeight: '800', textAlign: 'center' },
+  emptyHint: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center', lineHeight: 20 },
 });

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Alert, TextInput, Animated, NativeModules,
-  TouchableOpacity,
+  TouchableOpacity, Vibration,
 } from 'react-native';
 import { SOSButton } from '../components/SOSButton';
 import { EmergencyTypeSelector } from '../components/EmergencyTypeSelector';
@@ -17,6 +17,7 @@ import { COLORS, MESH_TTL_START } from '../utils/constants';
 import { requestAllPermissions } from '../utils/permissions';
 import DeviceInfo from 'react-native-device-info';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import RNFS from 'react-native-fs';
 
 export const HomeScreen: React.FC = () => {
   const [selectedType, setSelectedType] = useState<EmergencyType>('MEDICAL');
@@ -31,24 +32,23 @@ export const HomeScreen: React.FC = () => {
   const [relayedCount, setRelayedCount] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [audioBase64, setAudioBase64] = useState<string | undefined>(undefined);
+  const audioBase64Ref = useRef<string | undefined>(undefined);
   const [recordSecs, setRecordSecs] = useState(0);
   const profile = useRef<UserProfile | null>(null);
   const sosRef = useRef<(fromShake?: boolean) => void>(() => {});
   const audioRecorder = useRef(new AudioRecorderPlayer()).current;
 
-  // Animation values
-  const fadeAnim   = useRef(new Animated.Value(0)).current;
-  const slideAnim  = useRef(new Animated.Value(24)).current;
+  const fadeAnim    = useRef(new Animated.Value(0)).current;
+  const slideAnim   = useRef(new Animated.Value(30)).current;
   const counterScale = useRef(new Animated.Value(1)).current;
-  const peerRing   = useRef(new Animated.Value(1)).current;
-  const peerRingOp = useRef(new Animated.Value(0)).current;
-  const prevCount  = useRef(0);
+  const peerRing    = useRef(new Animated.Value(1)).current;
+  const peerRingOp  = useRef(new Animated.Value(0)).current;
+  const prevCount   = useRef(0);
 
   useEffect(() => {
-    // Staggered fade-in on mount
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+      Animated.timing(fadeAnim,  { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
     ]).start();
     init();
     return () => {
@@ -59,33 +59,30 @@ export const HomeScreen: React.FC = () => {
     };
   }, []);
 
-  // Animate counter when nearbyCount changes
   useEffect(() => {
     if (nearbyCount !== prevCount.current) {
       Animated.sequence([
-        Animated.timing(counterScale, { toValue: 1.3, duration: 150, useNativeDriver: true }),
-        Animated.timing(counterScale, { toValue: 1, duration: 150, useNativeDriver: true }),
+        Animated.timing(counterScale, { toValue: 1.35, duration: 160, useNativeDriver: true }),
+        Animated.spring(counterScale,  { toValue: 1, useNativeDriver: true, friction: 4 }),
       ]).start();
       prevCount.current = nearbyCount;
     }
-    // Pulse ring when peers connected
     if (nearbyCount > 0) {
       const anim = Animated.loop(Animated.sequence([
         Animated.parallel([
-          Animated.timing(peerRing, { toValue: 1.5, duration: 1500, useNativeDriver: true }),
-          Animated.timing(peerRingOp, { toValue: 0, duration: 1500, useNativeDriver: true }),
+          Animated.timing(peerRing,  { toValue: 1.6, duration: 2000, useNativeDriver: true }),
+          Animated.timing(peerRingOp,{ toValue: 0,   duration: 2000, useNativeDriver: true }),
         ]),
         Animated.parallel([
-          Animated.timing(peerRing, { toValue: 1, duration: 0, useNativeDriver: true }),
-          Animated.timing(peerRingOp, { toValue: 0.3, duration: 0, useNativeDriver: true }),
+          Animated.timing(peerRing,  { toValue: 1, duration: 0, useNativeDriver: true }),
+          Animated.timing(peerRingOp,{ toValue: 0.25, duration: 0, useNativeDriver: true }),
         ]),
       ]));
-      peerRingOp.setValue(0.3);
+      peerRingOp.setValue(0.25);
       anim.start();
       return () => anim.stop();
     } else {
-      peerRing.setValue(1);
-      peerRingOp.setValue(0);
+      peerRing.setValue(1); peerRingOp.setValue(0);
     }
   }, [nearbyCount]);
 
@@ -93,15 +90,10 @@ export const HomeScreen: React.FC = () => {
     try {
       setStatusText('Requesting permissions...');
       await requestAllPermissions();
-
-      // Start foreground service to keep BLE alive when screen is off
       try {
         NativeModules.ServiceModule?.startService();
         NativeModules.ServiceModule?.requestBatteryExemption();
-      } catch (e) {
-        console.warn('[Home] ServiceModule not available:', e);
-      }
-
+      } catch {}
       await storageService.initialize();
       const savedProfile = await storageService.getProfile();
       profile.current = savedProfile;
@@ -124,10 +116,17 @@ export const HomeScreen: React.FC = () => {
 
       nearbyService.onPeerUpdate(peers => setNearbyCount(peers.length));
       meshService.onSOS(() => setRelayedCount(meshService.getRelayedCount()));
+      meshService.onACK(ack => {
+        Vibration.vibrate([0, 200, 100, 200]);
+        Alert.alert(
+          '✅ Help is coming!',
+          `${ack.senderName} saw your SOS and is on the way.`,
+          [{ text: 'OK' }],
+        );
+      });
 
       setStatusText('Mesh active');
       setStatusOk(true);
-      console.log('[Home] ✅ All services running');
     } catch (e: any) {
       console.error('[Home] Init error:', e);
       setStatusText('Init error — check logs');
@@ -137,10 +136,8 @@ export const HomeScreen: React.FC = () => {
 
   const handleSOS = useCallback(async (fromShake = false) => {
     if (isSending) return;
-    if (fromShake) { doSend(selectedType); }
-    // Button now handles its own countdown, this is called after countdown completes
-    else { doSend(selectedType); }
-  }, [isSending, selectedType, message]);
+    doSend(selectedType);
+  }, [isSending, selectedType]);
 
   useEffect(() => { sosRef.current = handleSOS; }, [handleSOS]);
 
@@ -151,9 +148,7 @@ export const HomeScreen: React.FC = () => {
       audioRecorder.addRecordBackListener(e => setRecordSecs(Math.floor(e.currentPosition / 1000)));
       await audioRecorder.startRecorder();
       setIsRecording(true);
-    } catch (e) {
-      console.warn('[Voice] Start record failed:', e);
-    }
+    } catch (e) { console.warn('[Voice] Start record failed:', e); }
   };
 
   const stopRecording = async () => {
@@ -162,38 +157,33 @@ export const HomeScreen: React.FC = () => {
       audioRecorder.removeRecordBackListener();
       setIsRecording(false);
       setRecordSecs(0);
-      // Read file → base64 via fetch + FileReader
-      const uri = filePath.startsWith('file://') ? filePath : `file://${filePath}`;
-      const resp = await fetch(uri);
-      const blob = await resp.blob();
-      const b64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve((reader.result as string).split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      const cleanPath = filePath.startsWith('file://') ? filePath.slice(7) : filePath;
+      const b64 = await RNFS.readFile(cleanPath, 'base64');
+      audioBase64Ref.current = b64;
       setAudioBase64(b64);
-      console.log('[Voice] Recorded, base64 length:', b64.length);
     } catch (e) {
       console.warn('[Voice] Stop record failed:', e);
       setIsRecording(false);
     }
   };
 
-  const clearRecording = () => { setAudioBase64(undefined); setRecordSecs(0); };
+  const clearRecording = () => { audioBase64Ref.current = undefined; setAudioBase64(undefined); setRecordSecs(0); };
 
   const doSend = async (type: EmergencyType) => {
     setIsSending(true); setSosActive(true); setStatusText('Broadcasting SOS...');
     try {
       const p = profile.current;
       await meshService.sendSOS(type, message || undefined, {
-        bloodGroup: p?.bloodGroup, emergencyContacts: p?.emergencyContacts,
+        bloodGroup: p?.bloodGroup,
+        emergencyContacts: p?.emergencyContacts
+          ? String(p.emergencyContacts).split('\n').map(s => s.trim()).filter(Boolean)
+          : undefined,
         medicalConditions: p?.medicalConditions, allergies: p?.allergies,
-      }, audioBase64);
+      }, audioBase64Ref.current);
       const peers = nearbyService.getPeerCount();
-      setStatusText(peers > 0 ? `SOS sent to ${peers} peer(s)` : 'SOS stored — syncing when online');
+      setStatusText(peers > 0 ? `SOS sent to ${peers} peer${peers === 1 ? '' : 's'}` : 'SOS stored — syncing when online');
       const { synced } = await syncService.triggerSync();
-      if (synced > 0) setStatusText('✅ SOS uploaded to dashboard');
+      if (synced > 0) setStatusText('SOS uploaded to dashboard');
     } catch (e: any) {
       console.error('[SOS] Error:', e);
       setStatusText('Failed — stored locally');
@@ -210,10 +200,9 @@ export const HomeScreen: React.FC = () => {
     ? `Last ping: ${fmtTime(Date.now() - lastHeartbeat)} ago`
     : 'Heartbeat pending...';
 
-  // Coverage estimate: each hop covers ~100m, TTL hops, peer count as multiplier
   const coverageM = nearbyCount > 0 ? nearbyCount * MESH_TTL_START * 100 : 0;
   const coverageText = nearbyCount > 0
-    ? `~${coverageM >= 1000 ? (coverageM / 1000).toFixed(1) + 'km' : coverageM + 'm'} coverage · ${MESH_TTL_START} hops`
+    ? `~${coverageM >= 1000 ? (coverageM / 1000).toFixed(1) + 'km' : coverageM + 'm'} est. coverage · ${MESH_TTL_START} hops`
     : 'No mesh coverage yet';
 
   const statusColor = sosActive ? COLORS.sos : statusOk ? COLORS.safe : COLORS.textMuted;
@@ -229,9 +218,16 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.appName}>MeshAlert</Text>
-            <Text style={styles.tagline}>Offline disaster relief mesh</Text>
+            <Text style={styles.tagline}>Offline · BLE Mesh · Disaster Relief</Text>
           </View>
-          <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+          <View style={styles.headerRight}>
+            {relayedCount > 0 && (
+              <View style={styles.relayBadge}>
+                <Text style={styles.relayBadgeText}>{relayedCount} relayed</Text>
+              </View>
+            )}
+            <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+          </View>
         </View>
       </Animated.View>
 
@@ -239,29 +235,35 @@ export const HomeScreen: React.FC = () => {
       <Animated.View style={[
         styles.statusBar,
         sosActive && styles.statusBarSOS,
+        statusOk && !sosActive && styles.statusBarOk,
         { opacity: fadeAnim },
       ]}>
-        <View style={[styles.dot, { backgroundColor: statusColor }]} />
-        <Text style={styles.statusText}>{statusText}</Text>
-        {relayedCount > 0 && <Text style={styles.badge}>{relayedCount} relayed</Text>}
+        <View style={[styles.statusIndicator, { backgroundColor: statusColor }]} />
+        <Text style={[styles.statusText, { color: statusOk ? COLORS.text : COLORS.textMuted }]}>{statusText}</Text>
       </Animated.View>
 
-      {/* Nearby counter with animated ring */}
+      {/* Nearby counter */}
       <Animated.View style={[styles.counterSection, { opacity: fadeAnim }]}>
-        <View style={styles.counterWrapper}>
-          <Animated.View style={[styles.counterRing, { transform: [{ scale: peerRing }], opacity: peerRingOp }]} />
-          <Animated.View style={[styles.counterBadge, { transform: [{ scale: counterScale }] }]}>
+        <View style={styles.counterOuter}>
+          <Animated.View style={[styles.counterRing, {
+            transform: [{ scale: peerRing }],
+            opacity: peerRingOp,
+          }]} />
+          <Animated.View style={[styles.counterBadge, { transform: [{ scale: counterScale }] },
+            nearbyCount > 0 && styles.counterBadgeActive,
+          ]}>
             <Text style={styles.counterNum}>{nearbyCount}</Text>
-            <Text style={styles.counterLabel}>{nearbyCount === 1 ? 'device' : 'devices'} nearby</Text>
+            <Text style={styles.counterLabel}>{nearbyCount === 1 ? 'device' : 'devices'}</Text>
+            <Text style={styles.counterSub}>nearby</Text>
           </Animated.View>
         </View>
-        <Text style={styles.coverageText}>
-          {nearbyCount > 0 ? '📡 ' : '⚪ '}{coverageText}
+        <Text style={[styles.coverageText, nearbyCount > 0 && styles.coverageTextActive]}>
+          {nearbyCount > 0 ? '📡 ' : '○  '}{coverageText}
         </Text>
       </Animated.View>
 
       {/* SOS Button */}
-      <Animated.View style={[styles.centered, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+      <Animated.View style={[styles.sosSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <SOSButton
           onPress={() => handleSOS(false)}
           onLongPress={() => doSend(selectedType)}
@@ -275,19 +277,32 @@ export const HomeScreen: React.FC = () => {
       </Animated.View>
 
       {/* Info cards */}
-      <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
-        <Text style={styles.cardLabel}>📍 Your Location</Text>
-        <Text style={styles.cardValue}>{coordsText}</Text>
-      </Animated.View>
-
-      <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
-        <Text style={styles.cardLabel}>💓 Heartbeat</Text>
-        <Text style={styles.cardValue}>{heartbeatText}</Text>
+      <Animated.View style={[styles.infoRow, { opacity: fadeAnim }]}>
+        <View style={[styles.infoCard, styles.infoCardLocation]}>
+          <Text style={styles.infoCardIcon}>📍</Text>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.infoCardLabel}>Location</Text>
+            <Text style={styles.infoCardValue} numberOfLines={1}>{coordsText}</Text>
+          </View>
+        </View>
+        <View style={[styles.infoCard, styles.infoCardHeartbeat]}>
+          <Text style={styles.infoCardIcon}>💓</Text>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.infoCardLabel}>Heartbeat</Text>
+            <Text style={styles.infoCardValue} numberOfLines={1}>{heartbeatText}</Text>
+          </View>
+        </View>
       </Animated.View>
 
       {/* Message input */}
       <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
-        <Text style={styles.sectionLabel}>Message (optional)</Text>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionAccent} />
+          <Text style={styles.sectionTitle}>Message</Text>
+          <Text style={[styles.charCount, message.length > 240 && styles.charCountWarn]}>
+            {message.length}/300
+          </Text>
+        </View>
         <TextInput
           style={styles.input}
           value={message}
@@ -301,32 +316,47 @@ export const HomeScreen: React.FC = () => {
 
       {/* Voice SOS */}
       <Animated.View style={[styles.section, { opacity: fadeAnim }]}>
-        <Text style={styles.sectionLabel}>Voice Note (optional)</Text>
-        <View style={styles.voiceRow}>
-          <TouchableOpacity
-            style={[styles.micBtn, isRecording && styles.micBtnActive]}
-            onPressIn={startRecording}
-            onPressOut={stopRecording}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.micIcon}>{isRecording ? '⏹' : '🎙'}</Text>
-            <Text style={styles.micLabel}>
-              {isRecording ? `Recording... ${recordSecs}s` : 'Hold to record'}
-            </Text>
-          </TouchableOpacity>
-          {audioBase64 && (
-            <TouchableOpacity style={styles.clearVoiceBtn} onPress={clearRecording}>
-              <Text style={styles.clearVoiceText}>✓ Voice note attached  ✕</Text>
-            </TouchableOpacity>
-          )}
+        <View style={styles.sectionHeader}>
+          <View style={[styles.sectionAccent, { backgroundColor: COLORS.peer }]} />
+          <Text style={styles.sectionTitle}>Voice Note</Text>
+          <Text style={styles.sectionOptional}>optional</Text>
         </View>
+        <TouchableOpacity
+          style={[styles.micBtn, isRecording && styles.micBtnActive]}
+          onPressIn={startRecording}
+          onPressOut={stopRecording}
+          activeOpacity={0.8}
+        >
+          <View style={[styles.micIconWrap, isRecording && styles.micIconWrapActive]}>
+            <Text style={styles.micIcon}>{isRecording ? '🔴' : '🎙'}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.micLabel, isRecording && styles.micLabelActive]}>
+              {isRecording ? `Recording — ${recordSecs}s` : audioBase64 ? 'Hold to re-record' : 'Hold to record'}
+            </Text>
+            <Text style={styles.micHint}>
+              {isRecording ? 'Release when done' : 'Voice note included in SOS broadcast'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+        {audioBase64 && !isRecording && (
+          <View style={styles.voiceAttached}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={styles.voiceDot} />
+              <Text style={styles.voiceAttachedText}>Voice note attached</Text>
+            </View>
+            <TouchableOpacity onPress={clearRecording} style={styles.removeVoiceBtn}>
+              <Text style={styles.removeVoiceText}>Remove</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </Animated.View>
 
-      {/* Hint */}
-      <Animated.View style={[styles.hint, { opacity: fadeAnim }]}>
-        <Text style={styles.hintText}>📳 Shake 3× for instant SOS</Text>
-        <Text style={styles.hintText}>⚡ Long-press button to skip countdown</Text>
-        <Text style={styles.hintText}>📶 Turn WiFi ON for 200m+ range</Text>
+      {/* Hints */}
+      <Animated.View style={[styles.hintBox, { opacity: fadeAnim }]}>
+        <Text style={styles.hintItem}>📳  Shake phone 3× for instant SOS</Text>
+        <View style={styles.hintDivider} />
+        <Text style={styles.hintItem}>⚡  Long-press button to skip countdown</Text>
       </Animated.View>
     </Animated.ScrollView>
   );
@@ -343,69 +373,117 @@ function fmtTime(ms: number): string {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.background },
   content: { padding: 20, paddingBottom: 48 },
-  header: { marginBottom: 16, marginTop: 8 },
+
+  header: { marginBottom: 14, marginTop: 6 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  appName: { fontSize: 30, fontWeight: '900', color: COLORS.text, letterSpacing: -0.5 },
-  tagline: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
-  statusDot: { width: 10, height: 10, borderRadius: 5, marginTop: 6 },
+  appName: { fontSize: 32, fontWeight: '900', color: COLORS.text, letterSpacing: -0.8 },
+  tagline: { fontSize: 11, color: COLORS.textMuted, marginTop: 3, letterSpacing: 0.3 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
+  relayBadge: {
+    backgroundColor: 'rgba(30,136,229,0.12)',
+    borderRadius: 100, paddingHorizontal: 10, paddingVertical: 4,
+    borderWidth: 1, borderColor: 'rgba(30,136,229,0.25)',
+  },
+  relayBadgeText: { fontSize: 11, color: COLORS.peer, fontWeight: '700' },
+  statusDot: { width: 10, height: 10, borderRadius: 5 },
+
   statusBar: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: COLORS.surface, borderRadius: 12, padding: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: COLORS.surfaceLight, borderRadius: 12, padding: 12,
     marginBottom: 20, borderWidth: 1, borderColor: COLORS.border,
   },
-  statusBarSOS: { borderColor: COLORS.sos, backgroundColor: 'rgba(255,59,48,0.08)' },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  statusText: { flex: 1, fontSize: 13, color: COLORS.text },
-  badge: {
-    fontSize: 11, color: COLORS.peer, backgroundColor: 'rgba(30,136,229,0.15)',
-    paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10,
-  },
-  counterSection: { alignItems: 'center', marginBottom: 24 },
-  counterWrapper: { alignItems: 'center', justifyContent: 'center', width: 120, height: 120 },
+  statusBarOk: { borderColor: 'rgba(67,160,71,0.3)', backgroundColor: 'rgba(67,160,71,0.06)' },
+  statusBarSOS: { borderColor: 'rgba(255,59,48,0.4)', backgroundColor: 'rgba(255,59,48,0.08)' },
+  statusIndicator: { width: 7, height: 7, borderRadius: 4, flexShrink: 0 },
+  statusText: { flex: 1, fontSize: 13, fontWeight: '600' },
+
+  counterSection: { alignItems: 'center', marginBottom: 22 },
+  counterOuter: { width: 130, height: 130, alignItems: 'center', justifyContent: 'center' },
   counterRing: {
-    position: 'absolute',
-    width: 100, height: 100, borderRadius: 50,
+    position: 'absolute', width: 120, height: 120, borderRadius: 60,
     backgroundColor: COLORS.safe,
   },
   counterBadge: {
-    width: 90, height: 90, borderRadius: 45,
-    backgroundColor: COLORS.surface, borderWidth: 2, borderColor: COLORS.border,
+    width: 108, height: 108, borderRadius: 54,
+    backgroundColor: COLORS.surface,
+    borderWidth: 2, borderColor: COLORS.border,
     alignItems: 'center', justifyContent: 'center',
-    elevation: 4,
+    elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8,
   },
-  counterNum: { fontSize: 28, fontWeight: '900', color: COLORS.text },
-  counterLabel: { fontSize: 10, color: COLORS.textMuted, marginTop: 2, textAlign: 'center' },
-  coverageText: { fontSize: 12, color: COLORS.textMuted, marginTop: 8, textAlign: 'center' },
-  centered: { alignItems: 'center', marginBottom: 24 },
-  card: {
-    backgroundColor: COLORS.surface, borderRadius: 12, padding: 14,
-    marginBottom: 10, borderWidth: 1, borderColor: COLORS.border,
+  counterBadgeActive: {
+    borderColor: COLORS.safe, backgroundColor: 'rgba(67,160,71,0.08)',
+    shadowColor: COLORS.safe, shadowOpacity: 0.4,
   },
-  cardLabel: { fontSize: 11, color: COLORS.textMuted, marginBottom: 4, fontWeight: '600', letterSpacing: 0.5 },
-  cardValue: { fontSize: 14, color: COLORS.text, fontFamily: 'monospace' },
+  counterNum: { fontSize: 34, fontWeight: '900', color: COLORS.text, lineHeight: 36 },
+  counterLabel: { fontSize: 10, color: COLORS.textMuted, fontWeight: '700', letterSpacing: 0.5 },
+  counterSub: { fontSize: 10, color: COLORS.textMuted },
+  coverageText: { fontSize: 12, color: COLORS.textMuted, marginTop: 10, textAlign: 'center', fontWeight: '600' },
+  coverageTextActive: { color: COLORS.safe },
+
+  sosSection: { alignItems: 'center', marginBottom: 20 },
+
+  infoRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  infoCard: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: COLORS.surface, borderRadius: 12,
+    padding: 12, borderWidth: 1, borderColor: COLORS.border,
+  },
+  infoCardLocation: { borderLeftWidth: 3, borderLeftColor: COLORS.peer },
+  infoCardHeartbeat: { borderLeftWidth: 3, borderLeftColor: COLORS.sos },
+  infoCardIcon: { fontSize: 20 },
+  infoCardLabel: { fontSize: 10, color: COLORS.textMuted, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
+  infoCardValue: { fontSize: 12, color: COLORS.text, fontFamily: 'monospace', fontWeight: '600', marginTop: 2 },
+
   section: { marginBottom: 10 },
-  sectionLabel: { fontSize: 13, color: COLORS.textMuted, marginBottom: 6, fontWeight: '600' },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  sectionAccent: { width: 3, height: 14, borderRadius: 2, backgroundColor: COLORS.sos },
+  sectionTitle: { fontSize: 13, color: COLORS.text, fontWeight: '700', flex: 1 },
+  sectionOptional: { fontSize: 11, color: COLORS.textMuted },
+  charCount: { fontSize: 11, color: COLORS.textMuted },
+  charCountWarn: { color: COLORS.sos },
   input: {
     backgroundColor: COLORS.surfaceLight, borderRadius: 12, padding: 14,
-    color: COLORS.text, fontSize: 14, minHeight: 80, borderWidth: 1, borderColor: COLORS.border,
+    color: COLORS.text, fontSize: 14, minHeight: 80,
+    borderWidth: 1, borderColor: COLORS.border,
+    textAlignVertical: 'top',
   },
-  hint: {
-    marginTop: 16, padding: 14, backgroundColor: COLORS.surfaceLight,
-    borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, borderStyle: 'dashed', gap: 6,
-  },
-  hintText: { fontSize: 12, color: COLORS.textMuted, textAlign: 'center' },
-  voiceRow: { gap: 8 },
+
   micBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
+    flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: COLORS.surface, borderRadius: 12, padding: 14,
     borderWidth: 1, borderColor: COLORS.border,
   },
-  micBtnActive: { borderColor: COLORS.sos, backgroundColor: 'rgba(255,59,48,0.08)' },
-  micIcon: { fontSize: 22 },
-  micLabel: { fontSize: 13, color: COLORS.text, fontWeight: '600' },
-  clearVoiceBtn: {
-    padding: 10, backgroundColor: 'rgba(67,160,71,0.12)',
-    borderRadius: 10, borderWidth: 1, borderColor: COLORS.safe, alignItems: 'center',
+  micBtnActive: {
+    borderColor: COLORS.sos, backgroundColor: 'rgba(255,59,48,0.08)',
   },
-  clearVoiceText: { fontSize: 12, color: COLORS.safe, fontWeight: '700' },
+  micIconWrap: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: COLORS.surfaceLight, borderWidth: 1, borderColor: COLORS.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  micIconWrapActive: {
+    backgroundColor: 'rgba(255,59,48,0.12)', borderColor: COLORS.sos,
+  },
+  micIcon: { fontSize: 22 },
+  micLabel: { fontSize: 14, color: COLORS.text, fontWeight: '700' },
+  micLabelActive: { color: COLORS.sos },
+  micHint: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
+  voiceAttached: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginTop: 8, padding: 12,
+    backgroundColor: 'rgba(67,160,71,0.08)',
+    borderRadius: 10, borderWidth: 1, borderColor: 'rgba(67,160,71,0.3)',
+  },
+  voiceDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.safe },
+  voiceAttachedText: { fontSize: 13, color: COLORS.safe, fontWeight: '700' },
+  removeVoiceBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, backgroundColor: 'rgba(67,160,71,0.15)' },
+  removeVoiceText: { fontSize: 12, color: COLORS.safe, fontWeight: '600' },
+
+  hintBox: {
+    marginTop: 14, padding: 16,
+    backgroundColor: COLORS.surfaceLight,
+    borderRadius: 12, borderWidth: 1, borderColor: COLORS.border,
+  },
+  hintItem: { fontSize: 12, color: COLORS.textMuted, lineHeight: 20, fontWeight: '500' },
+  hintDivider: { height: 1, backgroundColor: COLORS.border, marginVertical: 8 },
 });

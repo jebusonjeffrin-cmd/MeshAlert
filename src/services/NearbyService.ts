@@ -1,26 +1,13 @@
 /**
- * NearbyService — dual-transport mesh layer.
- *
- * Transport A: Google Nearby Connections (BLE)
- *   - Works fully offline, Bluetooth only, ~30-50 m
- *   - Module: NearbyConnections
- *
- * Transport B: WifiP2p (WiFi Direct + NSD/mDNS)
- *   - Works on same AP (LAN) and offline via autonomous P2P group
- *   - ~100-200 m range, WiFi must be ON
- *   - Module: WifiP2p
- *
- * Both transports emit the same event names. Peers and messages from
- * either transport are merged into a single pool. MeshService deduplicates
- * messages by messageId, so relaying over both transports is safe.
+ * NearbyService — BLE mesh layer.
+ * Wraps NearbyModule (NearbyConnections native module) with JS-side peer tracking.
  */
 import { NativeEventEmitter, NativeModules } from 'react-native';
 import { MeshMessage, PeerDevice } from '../types';
 
-const { NearbyConnections, WifiP2p } = NativeModules;
+const { NearbyConnections } = NativeModules;
 
-const bleEmitter  = NearbyConnections ? new NativeEventEmitter(NearbyConnections) : null;
-const wifiEmitter = WifiP2p           ? new NativeEventEmitter(WifiP2p)           : null;
+const bleEmitter = NearbyConnections ? new NativeEventEmitter(NearbyConnections) : null;
 
 type MessageHandler = (msg: MeshMessage, fromEndpointId: string) => void;
 type PeerHandler    = (peers: PeerDevice[]) => void;
@@ -33,6 +20,7 @@ class NearbyService {
   private localName     = 'Survivor';
   private subs: (() => void)[]           = [];
   private watchdogTimer: ReturnType<typeof setInterval> | null = null;
+  private isInitialized = false; // FIX: guard against multiple initialize() calls
 
   setLocalDeviceId(id: string) { this.localDeviceId = id; }
 
@@ -40,27 +28,38 @@ class NearbyService {
     this.localDeviceId = deviceId;
     this.localName     = name;
 
-    const hasBLE  = !!NearbyConnections;
-    // WifiP2p disabled for now — re-enable by changing false to !!WifiP2p
-    const hasWiFi = false;
+    // FIX: if already initialized, just update name and return — do NOT re-register listeners
+    if (this.isInitialized) {
+      console.log('[Nearby] Already initialized — skipping duplicate init');
+      return true;
+    }
 
-    if (!hasBLE && !hasWiFi) {
+    const hasBLE = !!NearbyConnections;
+    if (!hasBLE) {
       console.error('[Nearby] No native transport modules found — rebuild APK');
       return false;
     }
 
-    const onConnected = ({ endpointId, endpointName, connectedCount }: any) => {
+    const onConnected = ({ endpointId, endpointName }: any) => {
       const display = endpointName ?? endpointId.slice(-8);
-      console.log('[Nearby] ✅ Peer connected:', display, '— total:', connectedCount);
-      // Dedup: same physical device can appear via both BLE and WiFi, or via two BLE MACs
-      // due to Android address randomization. If we already have a peer with this exact
-      // name, just update lastSeen. Only dedup when endpointName was explicitly sent
-      // (not the address-slice fallback) to avoid false-positive matches.
-      const existing = endpointName
-        ? Array.from(this.peers.values()).find(p => p.name === endpointName)
+      console.log('[Nearby] Peer connected:', display, '(', endpointId, ')');
+
+      // FIX: MAC address randomization — the same physical device may reconnect with a
+      // different random MAC address. If we find an existing peer by name, re-key the map
+      // so disconnect events (using new ID) correctly remove the peer.
+      const existingEntry = endpointName
+        ? Array.from(this.peers.entries()).find(([, p]) => p.name === endpointName)
         : null;
-      if (existing) {
-        existing.lastSeen = Date.now();
+
+      if (existingEntry) {
+        const [oldKey, existingPeer] = existingEntry;
+        existingPeer.lastSeen = Date.now();
+        if (oldKey !== endpointId) {
+          // Re-key: remove old MAC, add under new MAC so future disconnect hits correctly
+          this.peers.delete(oldKey);
+          this.peers.set(endpointId, existingPeer);
+          console.log('[Nearby] Re-keyed peer', display, 'from', oldKey.slice(-8), '→', endpointId.slice(-8));
+        }
       } else {
         this.peers.set(endpointId, {
           deviceId: endpointId, name: display,
@@ -81,7 +80,7 @@ class NearbyService {
       try {
         const msg: MeshMessage = JSON.parse(message);
         const peerName = this.peers.get(endpointId)?.name ?? endpointId.slice(-8);
-        console.log('[Nearby] 📨 Message from', peerName, ':', msg.type, msg.emergencyType ?? '');
+        console.log('[Nearby] Message from', peerName, ':', msg.type, msg.emergencyType ?? '');
         const peer = this.peers.get(endpointId);
         if (peer) { peer.lastSeen = Date.now(); peer.name = msg.senderName ?? peer.name; }
         this.msgHandlers.forEach(h => h(msg, endpointId));
@@ -97,52 +96,33 @@ class NearbyService {
       this.subs.push(() => s1.remove(), () => s2.remove(), () => s3.remove());
     }
 
-    if (wifiEmitter) {
-      const s4 = wifiEmitter.addListener('NearbyPeerConnected',    onConnected);
-      const s5 = wifiEmitter.addListener('NearbyPeerDisconnected', onDisconnected);
-      const s6 = wifiEmitter.addListener('NearbyMessageReceived',  onMessage);
-      this.subs.push(() => s4.remove(), () => s5.remove(), () => s6.remove());
-    }
+    this.isInitialized = true; // FIX: mark initialized BEFORE await so concurrent calls are blocked
 
-    let bleOk = false, wifiOk = false;
-
-    if (hasBLE) {
-      try {
-        await NearbyConnections.start(name);
-        bleOk = true;
-        console.log('[Nearby] ✅ BLE transport started');
-      } catch (e: any) {
-        console.warn('[Nearby] BLE start failed:', e?.message);
-      }
-    }
-
-    if (hasWiFi) {
-      try {
-        await WifiP2p.start(name);
-        wifiOk = true;
-        console.log('[Nearby] ✅ WiFi transport started');
-      } catch (e: any) {
-        console.warn('[Nearby] WiFi start failed:', e?.message);
-      }
+    let bleOk = false;
+    try {
+      await NearbyConnections.start(name);
+      bleOk = true;
+      console.log('[Nearby] BLE transport started');
+    } catch (e: any) {
+      console.warn('[Nearby] BLE start failed:', e?.message);
+      this.isInitialized = false; // allow retry if start failed
     }
 
     this.watchdogTimer = setInterval(async () => {
       if (this.peers.size === 0) {
-        console.log('[Nearby] Watchdog: 0 peers — restarting transports');
-        if (hasBLE)  { try { await NearbyConnections.start(this.localName); } catch {} }
-        if (hasWiFi) { try { await WifiP2p.start(this.localName);           } catch {} }
+        console.log('[Nearby] Watchdog: 0 peers — restarting BLE');
+        try { await NearbyConnections.start(this.localName); } catch {}
       }
     }, 30_000);
 
-    return bleOk || wifiOk;
+    return bleOk;
   }
 
   async broadcastMessage(msg: MeshMessage): Promise<number> {
     const json  = JSON.stringify(msg);
     let   total = 0;
     if (NearbyConnections) { try { total += await NearbyConnections.sendMessage(json); } catch {} }
-    if (WifiP2p)           { try { total += await WifiP2p.sendMessage(json);           } catch {} }
-    if (total > 0) console.log('[Nearby] 📤 Sent', msg.type, 'to', total, 'peers total');
+    if (total > 0) console.log('[Nearby] Sent', msg.type, 'to', total, 'peers');
     return total;
   }
 
@@ -166,8 +146,10 @@ class NearbyService {
   destroy(): void {
     if (this.watchdogTimer) { clearInterval(this.watchdogTimer); this.watchdogTimer = null; }
     this.subs.forEach(unsub => unsub());
+    this.subs = [];
+    this.isInitialized = false;
+    this.peers.clear();
     NearbyConnections?.stop().catch(() => {});
-    WifiP2p?.stop().catch(() => {});
   }
 }
 

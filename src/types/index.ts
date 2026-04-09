@@ -1,4 +1,4 @@
-export type MessageType = 'SOS' | 'HEARTBEAT';
+export type MessageType = 'SOS' | 'HEARTBEAT' | 'ACK';
 export type EmergencyType = 'MEDICAL' | 'TRAPPED' | 'SAFE';
 export type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | 'Unknown';
 
@@ -22,15 +22,16 @@ export interface MeshMessage {
   timestamp: number;
   hops: string[];
   synced?: boolean;
+  targetMessageId?: string;  // ACK messages — the SOS messageId being acknowledged
 }
 
 export interface UserProfile {
   deviceId: string;
   name: string;
-  bloodGroup: BloodGroup;
-  medicalConditions: string;
-  allergies: string;
-  emergencyContacts: string[];
+  bloodGroup?: BloodGroup;
+  medicalConditions?: string;
+  allergies?: string;
+  emergencyContacts?: string;   // newline-separated plain text
 }
 
 export interface PeerDevice {

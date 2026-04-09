@@ -21,20 +21,19 @@ export const SettingsScreen: React.FC = () => {
   const handleSave = async () => {
     const val = inputURL.trim();
     await syncService.setDashboardURL(val);
-    // getDashboardURL returns the normalised full URL
     const normalized = syncService.getDashboardURL();
     setSavedURL(normalized);
     Alert.alert('Saved', normalized || 'Dashboard cleared — offline mode.');
   };
 
   const handleTest = async () => {
-    if (!savedURL) {
-      Alert.alert('Nothing saved', 'Enter a URL or IP first.');
-      return;
-    }
+    if (!savedURL) { Alert.alert('Nothing saved', 'Enter a URL or IP first.'); return; }
     setTesting(true);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
     try {
-      const res = await fetch(`${savedURL}/api/health`, { method: 'GET' });
+      const res = await fetch(`${savedURL}/api/health`, { method: 'GET', signal: controller.signal });
+      clearTimeout(timer);
       if (res.ok) {
         const json = await res.json();
         Alert.alert('Connected ✅', `Dashboard is reachable.\n${json.messages ?? 0} alerts stored.`);
@@ -42,7 +41,8 @@ export const SettingsScreen: React.FC = () => {
         Alert.alert('Error', `HTTP ${res.status}`);
       }
     } catch (e: any) {
-      Alert.alert('Connection failed', e.message ?? 'Could not reach dashboard.');
+      clearTimeout(timer);
+      Alert.alert('Connection failed', e.name === 'AbortError' ? 'Timed out after 8s' : (e.message ?? 'Could not reach dashboard.'));
     } finally {
       setTesting(false);
     }
@@ -63,9 +63,7 @@ export const SettingsScreen: React.FC = () => {
               Alert.alert('Done', 'All messages cleared.');
             } catch {
               Alert.alert('Error', 'Could not clear data.');
-            } finally {
-              setClearingData(false);
-            }
+            } finally { setClearingData(false); }
           },
         },
       ],
@@ -75,13 +73,15 @@ export const SettingsScreen: React.FC = () => {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
+      {/* Dashboard Sync section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Dashboard Sync</Text>
+        <View style={styles.sectionHeader}>
+          <View style={[styles.sectionAccent, { backgroundColor: COLORS.peer }]} />
+          <Text style={styles.sectionTitle}>Dashboard Sync</Text>
+        </View>
         <Text style={styles.hint}>
-          Enter a public tunnel URL (e.g. https://abc.loca.lt) OR a local IP
-          (e.g. 192.168.1.100) if on the same Wi-Fi. Any phone that gets
-          internet will automatically upload all relayed SOS messages.
-          Leave blank for offline-only mode.
+          Enter a public tunnel URL (e.g. https://abc.loca.lt) or a local IP (e.g. 192.168.1.100)
+          if on the same Wi-Fi. Any phone that gets internet will automatically upload all relayed SOS messages.
         </Text>
 
         <Text style={styles.label}>Dashboard URL or IP</Text>
@@ -96,49 +96,78 @@ export const SettingsScreen: React.FC = () => {
           autoCorrect={false}
         />
         <View style={styles.btnRow}>
-          <TouchableOpacity style={styles.btnSecondary} onPress={handleSave}>
-            <Text style={styles.btnSecondaryText}>Save</Text>
+          <TouchableOpacity style={styles.btnSave} onPress={handleSave}>
+            <Text style={styles.btnSaveText}>Save</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.btnSecondary, testing && styles.btnDisabled]}
+            style={[styles.btnTest, testing && styles.btnDisabled]}
             onPress={handleTest}
             disabled={testing}
           >
-            <Text style={styles.btnSecondaryText}>{testing ? 'Testing...' : 'Test'}</Text>
+            <Text style={styles.btnTestText}>{testing ? 'Testing...' : 'Test Connection'}</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.currentUrl} numberOfLines={1}>
-          {savedURL ? `Active: ${savedURL}` : 'Offline mode — no dashboard configured'}
-        </Text>
+        {savedURL ? (
+          <View style={styles.activeUrlRow}>
+            <View style={styles.activeUrlDot} />
+            <Text style={styles.activeUrl} numberOfLines={1}>{savedURL}</Text>
+          </View>
+        ) : (
+          <Text style={styles.offlineNote}>Offline mode — no dashboard configured</Text>
+        )}
       </View>
 
+      {/* Mesh info section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Mesh Network Info</Text>
-        <InfoRow label="Protocol" value="BLE 4.0+ GATT" />
-        <InfoRow label="Message TTL" value="10 hops" />
-        <InfoRow label="Scan interval" value="Every 30s" />
-        <InfoRow label="Scan window" value="10s (UUID + name fallback)" />
-        <InfoRow label="Heartbeat" value="Every 5 min" />
-        <InfoRow label="Shake trigger" value="3× in 2s window" />
+        <View style={styles.sectionHeader}>
+          <View style={[styles.sectionAccent, { backgroundColor: COLORS.safe }]} />
+          <Text style={styles.sectionTitle}>Mesh Network</Text>
+        </View>
+        <View style={styles.infoTable}>
+          {[
+            ['Protocol',       'BLE 4.0+ GATT custom service'],
+            ['Message TTL',    '10 hops max relay depth'],
+            ['Scan interval',  'Every 30s (10s window)'],
+            ['Heartbeat',      'Every 5 min (15 min low battery)'],
+            ['Shake trigger',  '3× in 2s window'],
+            ['Audio',          'Stored locally, synced via internet'],
+          ].map(([label, value]) => (
+            <InfoRow key={label} label={label} value={value} />
+          ))}
+        </View>
       </View>
 
+      {/* Data section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Data</Text>
+        <View style={styles.sectionHeader}>
+          <View style={[styles.sectionAccent, { backgroundColor: COLORS.sos }]} />
+          <Text style={styles.sectionTitle}>Data</Text>
+        </View>
         <TouchableOpacity
           style={[styles.btnDanger, clearingData && styles.btnDisabled]}
           onPress={handleClearData}
           disabled={clearingData}
         >
           <Text style={styles.btnDangerText}>
-            {clearingData ? 'Clearing...' : 'Clear All Stored Messages'}
+            {clearingData ? 'Clearing...' : '🗑  Clear All Stored Messages'}
           </Text>
         </TouchableOpacity>
       </View>
 
+      {/* About */}
       <View style={styles.about}>
+        <View style={styles.aboutBadge}>
+          <Text style={styles.aboutBadgeText}>🆘</Text>
+        </View>
         <Text style={styles.aboutTitle}>MeshAlert</Text>
         <Text style={styles.aboutSub}>Offline disaster relief mesh network</Text>
-        <Text style={styles.aboutSub}>React Native · BLE Mesh · SQLite · No internet required</Text>
+        <View style={styles.aboutTechRow}>
+          {['BLE Mesh', 'SQLite', 'React Native', 'No Internet Required'].map(t => (
+            <View key={t} style={styles.techChip}>
+              <Text style={styles.techChipText}>{t}</Text>
+            </View>
+          ))}
+        </View>
       </View>
     </ScrollView>
   );
@@ -153,37 +182,70 @@ const InfoRow: React.FC<{ label: string; value: string }> = ({ label, value }) =
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: COLORS.background },
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 20, paddingBottom: 48 },
+
   section: { marginBottom: 28 },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
-  hint: { fontSize: 12, color: COLORS.textMuted, marginBottom: 12, lineHeight: 18 },
-  label: { fontSize: 13, color: COLORS.textMuted, fontWeight: '600', marginBottom: 6 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  sectionAccent: { width: 3, height: 16, borderRadius: 2 },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.text },
+  hint: { fontSize: 12, color: COLORS.textMuted, marginBottom: 14, lineHeight: 18 },
+
+  label: { fontSize: 12, color: COLORS.textMuted, fontWeight: '700', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
   input: {
-    backgroundColor: COLORS.surface, borderRadius: 10, padding: 14,
+    backgroundColor: COLORS.surface, borderRadius: 12, padding: 14,
     color: COLORS.text, fontSize: 13, borderWidth: 1, borderColor: COLORS.border,
     marginBottom: 10,
   },
-  btnRow: { flexDirection: 'row', gap: 10 },
-  btnSecondary: {
-    flex: 1, paddingVertical: 12, borderRadius: 10,
+  btnRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  btnSave: {
+    flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center',
+    backgroundColor: COLORS.peer,
+  },
+  btnSaveText: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  btnTest: {
+    flex: 2, paddingVertical: 12, borderRadius: 10, alignItems: 'center',
     backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border,
-    alignItems: 'center',
   },
-  btnSecondaryText: { fontSize: 14, fontWeight: '700', color: COLORS.text },
+  btnTestText: { fontSize: 14, fontWeight: '700', color: COLORS.text },
   btnDisabled: { opacity: 0.5 },
-  currentUrl: { fontSize: 11, color: COLORS.textMuted, marginTop: 8, fontFamily: 'monospace' },
-  infoRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border,
+
+  activeUrlRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  activeUrlDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.safe, flexShrink: 0 },
+  activeUrl: { fontSize: 11, color: COLORS.textMuted, fontFamily: 'monospace', flex: 1 },
+  offlineNote: { fontSize: 11, color: COLORS.textMuted },
+
+  infoTable: {
+    backgroundColor: COLORS.surface, borderRadius: 12,
+    borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden',
   },
-  infoLabel: { fontSize: 13, color: COLORS.textMuted },
-  infoValue: { fontSize: 13, color: COLORS.text, fontWeight: '600' },
+  infoRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+    paddingVertical: 12, paddingHorizontal: 16,
+    borderBottomWidth: 1, borderBottomColor: COLORS.border,
+  },
+  infoLabel: { fontSize: 13, color: COLORS.textMuted, flex: 1 },
+  infoValue: { fontSize: 13, color: COLORS.text, fontWeight: '600', flex: 2, textAlign: 'right' },
+
   btnDanger: {
-    backgroundColor: 'rgba(183,28,28,0.12)', borderRadius: 10, paddingVertical: 14,
-    alignItems: 'center', borderWidth: 1, borderColor: COLORS.sos,
+    backgroundColor: 'rgba(183,28,28,0.08)', borderRadius: 12, paddingVertical: 14,
+    alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)',
   },
   btnDangerText: { fontSize: 14, fontWeight: '700', color: COLORS.sos },
-  about: { alignItems: 'center', paddingTop: 20, gap: 4 },
-  aboutTitle: { fontSize: 18, fontWeight: '900', color: COLORS.text },
+
+  about: { alignItems: 'center', paddingTop: 16, gap: 8 },
+  aboutBadge: {
+    width: 52, height: 52, borderRadius: 16,
+    backgroundColor: 'rgba(255,59,48,0.1)', borderWidth: 2, borderColor: 'rgba(255,59,48,0.2)',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 4,
+  },
+  aboutBadgeText: { fontSize: 26 },
+  aboutTitle: { fontSize: 20, fontWeight: '900', color: COLORS.text },
   aboutSub: { fontSize: 12, color: COLORS.textMuted, textAlign: 'center' },
+  aboutTechRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginTop: 4 },
+  techChip: {
+    backgroundColor: COLORS.surfaceLight, borderRadius: 100,
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderWidth: 1, borderColor: COLORS.border,
+  },
+  techChipText: { fontSize: 11, color: COLORS.textMuted, fontWeight: '600' },
 });

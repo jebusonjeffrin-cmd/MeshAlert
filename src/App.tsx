@@ -80,9 +80,13 @@ export default function App(): React.JSX.Element {
               backgroundColor: COLORS.surface,
               borderTopColor: COLORS.border,
               borderTopWidth: 1,
+              height: 62,
+              paddingBottom: 8,
+              paddingTop: 6,
             },
             tabBarActiveTintColor: COLORS.sos,
             tabBarInactiveTintColor: COLORS.textMuted,
+            tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
             headerShown: false,
           }}
         >
@@ -117,6 +121,6 @@ export default function App(): React.JSX.Element {
   );
 }
 
-const TabIcon: React.FC<{ icon: string; color: string }> = ({ icon }) => (
-  <Text style={{ fontSize: 18 }}>{icon}</Text>
+const TabIcon: React.FC<{ icon: string; color: string }> = ({ icon, color }) => (
+  <Text style={{ fontSize: 20, color }}>{icon}</Text>
 );

@@ -9,83 +9,135 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --red:    #FF3B30;
-  --red2:   #FF6B63;
-  --blue:   #1E88E5;
-  --green:  #00C853;
-  --orange: #FF8C00;
-  --bg:     #0F1623;
-  --bg2:    #162030;
-  --bg3:    #1C2B3E;
-  --border: #243347;
-  --text:   #DCE8F5;
-  --muted:  #6B8CAD;
-  --dim:    #2E4060;
+  --red:     #FF3B30;
+  --red-dim: rgba(255,59,48,0.12);
+  --red2:    #FF6B63;
+  --blue:    #1E88E5;
+  --green:   #00C853;
+  --orange:  #FF8C00;
+  --purple:  #9C27B0;
+  --bg:      #0A0F1A;
+  --bg2:     #111827;
+  --bg3:     #1A2332;
+  --bg4:     #1F2D40;
+  --border:  #1E3050;
+  --border2: #243347;
+  --text:    #E2EDF8;
+  --muted:   #5B7A9A;
+  --dim:     #1E3050;
+  --glow-r:  rgba(255,59,48,0.35);
+  --glow-b:  rgba(30,136,229,0.25);
+  --glow-g:  rgba(0,200,83,0.25);
 }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 html, body { height: 100%; overflow: hidden; }
-body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  display: flex; flex-direction: column;
+}
 
 /* ══ Topbar ══ */
 .topbar {
-  height: 58px; min-height: 58px; flex-shrink: 0;
-  display: flex; align-items: center; padding: 0 20px; gap: 14px;
-  background: var(--bg2); border-bottom: 1px solid var(--border); z-index: 50;
+  height: 56px; min-height: 56px; flex-shrink: 0;
+  display: flex; align-items: center; padding: 0 18px; gap: 12px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  position: relative; z-index: 50;
 }
-.logo-link { display: flex; align-items: center; gap: 8px; text-decoration: none; }
-.logo-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--red); animation: blink 2s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.35} }
-.logo-text { font-size: 17px; font-weight: 900; color: var(--text); }
-.topbar-sep { width: 1px; height: 22px; background: var(--border); }
-.page-title { font-size: 13px; font-weight: 600; color: var(--muted); }
-.topbar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.topbar::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--red) 0%, transparent 40%);
+  opacity: 0.5;
+}
+.logo-link { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.logo-icon {
+  width: 30px; height: 30px; border-radius: 9px;
+  background: linear-gradient(135deg, var(--red) 0%, #B71C1C 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  box-shadow: 0 0 14px var(--glow-r);
+}
+.logo-text { font-size: 16px; font-weight: 900; color: var(--text); letter-spacing: -0.3px; }
+.topbar-sep { width: 1px; height: 20px; background: var(--border); margin: 0 2px; }
+.page-title { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase; }
+.topbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .pill {
   display: inline-flex; align-items: center; gap: 6px;
-  border-radius: 100px; padding: 5px 12px; font-size: 12px; font-weight: 700;
+  border-radius: 100px; padding: 4px 11px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
 }
-.pill-live  { background: rgba(0,200,83,0.1);  border: 1px solid rgba(0,200,83,0.2);  color: #5CE890; }
+.pill-live  { background: rgba(0,200,83,0.1); border: 1px solid rgba(0,200,83,0.25); color: #3DDC84; }
 .pill-conn  { background: rgba(255,59,48,0.08); border: 1px solid rgba(255,59,48,0.2); color: var(--red2); }
-.pill-conn.ok { background: rgba(0,200,83,0.08); border-color: rgba(0,200,83,0.2); color: #5CE890; }
+.pill-conn.ok { background: rgba(0,200,83,0.08); border-color: rgba(0,200,83,0.25); color: #3DDC84; }
 .pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: blink 1.5s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 .icon-btn {
-  width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--border);
-  background: var(--bg3); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center;
-  color: var(--muted); transition: all 0.18s;
+  width: 32px; height: 32px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg3);
+  cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); transition: all 0.15s; flex-shrink: 0;
 }
-.icon-btn:hover { background: var(--bg2); border-color: var(--dim); color: var(--text); }
+.icon-btn:hover { background: var(--bg4); border-color: var(--border2); color: var(--text); }
+.clock {
+  font-size: 12px; font-weight: 700; color: var(--muted);
+  font-variant-numeric: tabular-nums; letter-spacing: 0.5px;
+  padding: 0 8px;
+}
 .user-pill {
   display: flex; align-items: center; gap: 8px;
-  background: var(--bg3); border: 1px solid var(--border); border-radius: 9px; padding: 5px 12px;
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px;
 }
 .user-av {
-  width: 22px; height: 22px; border-radius: 7px; background: var(--red);
-  display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff;
+  width: 22px; height: 22px; border-radius: 6px;
+  background: linear-gradient(135deg, var(--red), #7B1FA2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 900; color: #fff;
 }
-.user-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.user-name { font-size: 12px; font-weight: 700; color: var(--text); }
 
 /* ══ Stats row ══ */
 .stats-row {
   display: grid; grid-template-columns: repeat(4, 1fr);
-  flex-shrink: 0; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
   background: var(--bg2);
 }
 .stat-cell {
   display: flex; align-items: center; gap: 14px;
-  padding: 14px 20px; border-right: 1px solid var(--border); position: relative;
-  overflow: hidden;
+  padding: 14px 20px; border-right: 1px solid var(--border);
+  position: relative; overflow: hidden; cursor: default;
+  transition: background 0.2s;
 }
 .stat-cell:last-child { border-right: none; }
+.stat-cell:hover { background: var(--bg3); }
 .stat-cell::before {
   content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-  background: var(--border);
 }
-.stat-cell.medical::before { background: var(--red); }
-.stat-cell.trapped::before { background: var(--orange); }
-.stat-cell.safe::before { background: var(--green); }
-.stat-cell.total::before { background: var(--blue); }
-.stat-icon { font-size: 22px; flex-shrink: 0; }
-.stat-body {}
-.stat-val { font-size: 24px; font-weight: 900; line-height: 1; }
-.stat-lbl { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.4px; margin-top: 2px; text-transform: uppercase; }
+.stat-cell.medical::before { background: linear-gradient(180deg, var(--red), #7B1FA2); }
+.stat-cell.trapped::before { background: linear-gradient(180deg, var(--orange), #F57F17); }
+.stat-cell.safe::before    { background: linear-gradient(180deg, var(--green), #1B5E20); }
+.stat-cell.total::before   { background: linear-gradient(180deg, var(--blue), #0D47A1); }
+.stat-icon-wrap {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.stat-cell.medical .stat-icon-wrap { background: rgba(255,59,48,0.1); }
+.stat-cell.trapped .stat-icon-wrap { background: rgba(255,140,0,0.1); }
+.stat-cell.safe    .stat-icon-wrap { background: rgba(0,200,83,0.1); }
+.stat-cell.total   .stat-icon-wrap { background: rgba(30,136,229,0.1); }
+.stat-body { min-width: 0; }
+.stat-val {
+  font-size: 26px; font-weight: 900; line-height: 1;
+  transition: transform 0.2s;
+  font-variant-numeric: tabular-nums;
+}
+.stat-val.bump { animation: statBump 0.3s ease; }
+@keyframes statBump { 0%{transform:scale(1)} 50%{transform:scale(1.25)} 100%{transform:scale(1)} }
+.stat-lbl { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: 0.6px; margin-top: 3px; text-transform: uppercase; }
 
 /* ══ Main content area ══ */
 .content-area { display: flex; flex: 1; overflow: hidden; min-height: 0; }
@@ -93,15 +145,13 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, Bl
 /* ── Map ── */
 .map-wrap { flex: 1; position: relative; min-width: 0; }
 #map { width: 100%; height: 100%; }
-
-/* Map overlay chips */
 .map-legend {
   position: absolute; bottom: 52px; left: 16px; z-index: 900;
-  display: flex; flex-direction: column; gap: 6px;
+  display: flex; flex-direction: column; gap: 5px;
 }
 .map-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(15,22,35,0.85); backdrop-filter: blur(10px);
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(10,15,26,0.88); backdrop-filter: blur(12px);
   border: 1px solid var(--border); border-radius: 100px;
   padding: 5px 12px; font-size: 11px; font-weight: 700; color: var(--text);
 }
@@ -109,109 +159,217 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, Bl
 
 /* ── Feed panel ── */
 .feed-panel {
-  width: 400px; min-width: 400px; flex-shrink: 0;
+  width: 420px; min-width: 380px; flex-shrink: 0;
   display: flex; flex-direction: column;
   background: var(--bg2); border-left: 1px solid var(--border);
   overflow: hidden;
 }
 .feed-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  padding: 12px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
 }
-.feed-title { font-size: 13px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
-.feed-count { font-size: 11px; background: var(--bg3); border: 1px solid var(--border); border-radius: 100px; padding: 2px 8px; color: var(--muted); font-weight: 700; }
+.feed-title {
+  font-size: 12px; font-weight: 800; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+  text-transform: uppercase; letter-spacing: 0.8px;
+}
+.feed-count {
+  font-size: 10px; background: var(--bg4); border: 1px solid var(--border);
+  border-radius: 100px; padding: 2px 8px; color: var(--muted); font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
 .feed-actions { display: flex; gap: 6px; }
 
 /* Tunnel box */
 .tunnel-wrap {
-  padding: 10px 12px; border-bottom: 1px solid var(--border);
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
   background: rgba(0,200,83,0.04); flex-shrink: 0; display: none;
 }
 .tunnel-wrap.show { display: block; }
 .tunnel-tag { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: var(--green); text-transform: uppercase; margin-bottom: 4px; }
-.tunnel-url { font-size: 12px; font-family: monospace; color: var(--text); cursor: pointer; word-break: break-all; }
+.tunnel-url { font-size: 11px; font-family: 'Fira Mono', 'Courier New', monospace; color: var(--text); cursor: pointer; word-break: break-all; }
 .tunnel-url:hover { color: var(--green); }
 
-/* Feed cards scroll */
-.feed-scroll { flex: 1; overflow-y: auto; padding: 12px; }
-.feed-scroll::-webkit-scrollbar { width: 5px; }
+/* Feed scroll */
+.feed-scroll { flex: 1; overflow-y: auto; padding: 10px; }
+.feed-scroll::-webkit-scrollbar { width: 4px; }
 .feed-scroll::-webkit-scrollbar-track { background: transparent; }
 .feed-scroll::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 4px; }
 .feed-scroll::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
-/* Alert card */
+/* ── Alert card ── */
 .alert-card {
-  background: var(--bg3); border: 1px solid var(--border);
+  background: var(--bg3);
+  border: 1px solid var(--border);
   border-left: 3px solid var(--border);
-  border-radius: 12px; padding: 14px; margin-bottom: 8px;
-  cursor: pointer; transition: background 0.15s, border-color 0.15s;
-  animation: slideIn 0.3s ease both; position: relative;
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;
+  cursor: pointer; transition: background 0.15s, transform 0.15s;
+  animation: slideIn 0.25s cubic-bezier(.25,.46,.45,.94) both;
+  position: relative; overflow: hidden;
 }
-@keyframes slideIn { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:none; } }
-.alert-card:hover { background: var(--bg2); }
-.alert-card.new-flash { background: rgba(255,59,48,0.07); }
+@keyframes slideIn { from { opacity:0; transform:translateY(-8px) scale(0.98); } to { opacity:1; transform:none; } }
+.alert-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  opacity: 0; transition: opacity 0.3s;
+}
+.alert-card.MEDICAL::before { background: linear-gradient(90deg, var(--red), transparent); }
+.alert-card.TRAPPED::before { background: linear-gradient(90deg, var(--orange), transparent); }
+.alert-card.SAFE::before    { background: linear-gradient(90deg, var(--green), transparent); }
+.alert-card:hover { background: var(--bg4); transform: translateX(-2px); }
+.alert-card:hover::before { opacity: 1; }
 .alert-card.MEDICAL { border-left-color: var(--red); }
 .alert-card.TRAPPED { border-left-color: var(--orange); }
 .alert-card.SAFE    { border-left-color: var(--green); }
 .alert-card.HEARTBEAT { border-left-color: var(--blue); }
-.ac-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
-.ac-type { font-size: 11px; font-weight: 800; letter-spacing: 0.8px; }
-.ac-type.MEDICAL  { color: var(--red); }
-.ac-type.TRAPPED  { color: var(--orange); }
-.ac-type.SAFE     { color: var(--green); }
-.ac-type.HEARTBEAT{ color: var(--blue); }
-.ac-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.ac-age { font-size: 11px; color: var(--muted); }
-.ac-del { background: none; border: none; cursor: pointer; font-size: 12px; color: var(--dim); padding: 2px; opacity: 0; transition: opacity 0.15s; }
+.alert-card.critical-flash {
+  animation: critFlash 0.8s ease 3;
+}
+@keyframes critFlash {
+  0%,100% { background: var(--bg3); }
+  50% { background: rgba(255,59,48,0.12); }
+}
+.ac-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.ac-type-row { display: flex; align-items: center; gap: 7px; }
+.ac-type-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.8px;
+  border-radius: 6px; padding: 3px 8px; text-transform: uppercase;
+}
+.ac-type-badge.MEDICAL { background: rgba(255,59,48,0.15); color: var(--red2); }
+.ac-type-badge.TRAPPED { background: rgba(255,140,0,0.15); color: #FFB74D; }
+.ac-type-badge.SAFE    { background: rgba(0,200,83,0.12); color: #69F0AE; }
+.ac-type-badge.HEARTBEAT { background: rgba(30,136,229,0.12); color: #64B5F6; }
+.ac-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.ac-age { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ac-del {
+  background: none; border: none; cursor: pointer;
+  width: 22px; height: 22px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 12px;
+  opacity: 0; transition: opacity 0.15s, background 0.15s;
+}
 .alert-card:hover .ac-del { opacity: 1; }
-.ac-del:hover { color: var(--red); }
-.ac-name { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
-.ac-coords { font-size: 11px; color: var(--muted); font-family: monospace; }
-.ac-msg { font-size: 12px; color: var(--muted); font-style: italic; margin-top: 4px; }
-.ac-meta { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
-.ac-badge { font-size: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px; color: var(--muted); font-weight: 600; }
+.ac-del:hover { background: rgba(255,59,48,0.12); color: var(--red); }
+.ac-name { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+.ac-coords {
+  font-size: 11px; color: var(--muted);
+  font-family: 'Fira Mono', 'Courier New', monospace;
+  margin-bottom: 3px;
+}
+.ac-msg {
+  font-size: 12px; color: #A0B4C8; font-style: italic;
+  margin: 4px 0; padding: 6px 10px;
+  background: rgba(255,255,255,0.03); border-radius: 6px;
+  border-left: 2px solid var(--border2);
+}
+.ac-medical {
+  margin-top: 6px; padding: 7px 10px;
+  background: rgba(255,59,48,0.06); border-radius: 8px;
+  border: 1px solid rgba(255,59,48,0.15);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.ac-medical-item { font-size: 11px; color: #FFAB91; font-weight: 600; }
+.ac-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.ac-badge {
+  font-size: 10px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 5px; padding: 2px 7px; color: var(--muted); font-weight: 700;
+}
+.ac-badge.blood {
+  background: rgba(255,59,48,0.1); border-color: rgba(255,59,48,0.3);
+  color: var(--red2); font-weight: 800;
+}
+.ac-badge.synced { background: rgba(0,200,83,0.08); border-color: rgba(0,200,83,0.3); color: #69F0AE; }
 .ac-pin { font-size: 10px; color: var(--blue); font-weight: 700; }
+audio {
+  width: 100%; height: 28px; margin-top: 7px;
+  border-radius: 8px; outline: none;
+  filter: invert(1) hue-rotate(180deg) brightness(0.85);
+}
 
 /* Empty state */
-.empty-state { text-align: center; padding: 48px 20px; }
-.empty-state .ei { font-size: 40px; margin-bottom: 14px; }
-.empty-state .et { font-size: 14px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
-.empty-state .eh { font-size: 12px; color: var(--dim); }
+.empty-state { text-align: center; padding: 56px 24px; }
+.empty-icon { font-size: 44px; margin-bottom: 16px; display: block; animation: float 3s ease-in-out infinite; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.empty-title { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.empty-sub { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.empty-dots { display: flex; justify-content: center; gap: 6px; margin-top: 20px; }
+.empty-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); animation: dotBlink 1.4s infinite; }
+.empty-dot:nth-child(2) { animation-delay: 0.2s; }
+.empty-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotBlink { 0%,100%{opacity:0.3} 50%{opacity:1} }
 
 /* ══ Info bar ══ */
 .info-bar {
-  height: 38px; min-height: 38px; flex-shrink: 0;
+  height: 36px; min-height: 36px; flex-shrink: 0;
   background: var(--bg2); border-top: 1px solid var(--border);
   display: flex; align-items: center; padding: 0 16px; gap: 20px;
 }
-.ib-item { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
-.ib-item strong { color: var(--text); font-weight: 700; }
+.ib-item { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 5px; font-weight: 500; }
+.ib-item strong { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+.ib-sep { width: 1px; height: 14px; background: var(--border); }
+
+/* ══ Toast notification ══ */
+.toast-wrap {
+  position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+  z-index: 9999; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg3); border: 1px solid var(--red);
+  border-radius: 12px; padding: 12px 18px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px var(--red) inset;
+  animation: toastIn 0.3s cubic-bezier(.34,1.56,.64,1) both;
+  pointer-events: all;
+  max-width: 360px;
+}
+@keyframes toastIn { from{opacity:0;transform:translateY(-16px) scale(0.9)} to{opacity:1;transform:none} }
+@keyframes toastOut { from{opacity:1;transform:none} to{opacity:0;transform:translateY(-8px) scale(0.95)} }
+.toast.out { animation: toastOut 0.2s ease both; }
+.toast-icon { font-size: 22px; flex-shrink: 0; }
+.toast-body { min-width: 0; }
+.toast-title { font-size: 13px; font-weight: 800; color: var(--red2); margin-bottom: 2px; }
+.toast-sub { font-size: 11px; color: var(--muted); }
 
 /* ══ Leaflet overrides ══ */
-.leaflet-popup-content-wrapper { background: #1C2B3E !important; color: var(--text) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important; }
-.leaflet-popup-tip { background: #1C2B3E !important; }
-.leaflet-popup-content { font-family: -apple-system, system-ui, sans-serif !important; margin: 12px 14px !important; }
-.leaflet-popup-content b { display: block; font-size: 12px; letter-spacing: 0.8px; color: var(--red) !important; margin-bottom: 6px; }
-.leaflet-popup-content p { font-size: 12px; color: var(--muted); margin: 3px 0; line-height: 1.5; }
-.leaflet-tile { filter: brightness(0.78) contrast(1.05) saturate(0.65); }
-.leaflet-control-zoom a { background: var(--bg2) !important; color: var(--text) !important; border-color: var(--border) !important; }
-.leaflet-control-zoom a:hover { background: var(--bg3) !important; }
-.leaflet-control-attribution { background: rgba(15,22,35,0.75) !important; color: var(--muted) !important; font-size: 10px !important; }
+.leaflet-popup-content-wrapper {
+  background: var(--bg3) !important; color: var(--text) !important;
+  border: 1px solid var(--border) !important; border-radius: 12px !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6) !important;
+}
+.leaflet-popup-tip { background: var(--bg3) !important; }
+.leaflet-popup-content { font-family: 'Inter', system-ui, sans-serif !important; margin: 12px 14px !important; line-height: 1.6; }
+.leaflet-popup-content b {
+  display: block; font-size: 11px; font-weight: 800;
+  letter-spacing: 0.8px; text-transform: uppercase;
+  color: var(--red2) !important; margin-bottom: 8px;
+}
+.leaflet-popup-content p { font-size: 12px; color: #8BA8C0; margin: 2px 0; }
+.leaflet-tile { filter: brightness(0.7) contrast(1.08) saturate(0.55); }
+.leaflet-control-zoom a { background: var(--bg3) !important; color: var(--text) !important; border-color: var(--border) !important; font-weight: 700 !important; }
+.leaflet-control-zoom a:hover { background: var(--bg4) !important; }
+.leaflet-control-attribution { background: rgba(10,15,26,0.75) !important; color: var(--muted) !important; font-size: 10px !important; backdrop-filter: blur(6px); }
 </style>
 </head>
 <body>
 
+<!-- Toast container -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
 <!-- Topbar -->
 <div class="topbar">
   <a href="/" class="logo-link">
-    <div class="logo-dot"></div>
+    <div class="logo-icon">🆘</div>
     <span class="logo-text">MeshAlert</span>
   </a>
   <div class="topbar-sep"></div>
-  <span class="page-title">Command Dashboard</span>
+  <span class="page-title">Command Center</span>
   <div class="topbar-right">
-    <div class="pill pill-live"><div class="pill-dot"></div>Live</div>
-    <div class="pill pill-conn" id="conn-pill">⬤ Connecting</div>
+    <div class="pill pill-live"><div class="pill-dot"></div>LIVE</div>
+    <div class="pill pill-conn" id="conn-pill"><div class="pill-dot"></div><span id="conn-text">Connecting</span></div>
+    <div class="clock" id="topbar-clock">--:--:--</div>
+    <div class="topbar-sep"></div>
+    <button class="icon-btn" id="sound-btn" onclick="toggleSound()" title="Toggle alert sound">🔔</button>
     <button class="icon-btn" onclick="fitMap()" title="Fit map to alerts">⊞</button>
     <button class="icon-btn" onclick="exportCsv()" title="Export CSV">⬇</button>
     <div class="user-pill">
@@ -225,20 +383,32 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, Bl
 <!-- Stats row -->
 <div class="stats-row">
   <div class="stat-cell total">
-    <div class="stat-icon">🆘</div>
-    <div class="stat-body"><div class="stat-val" id="s-total">0</div><div class="stat-lbl">Total Alerts</div></div>
+    <div class="stat-icon-wrap">🆘</div>
+    <div class="stat-body">
+      <div class="stat-val" id="s-total" style="color:var(--blue)">0</div>
+      <div class="stat-lbl">Total Alerts</div>
+    </div>
   </div>
   <div class="stat-cell medical">
-    <div class="stat-icon">🏥</div>
-    <div class="stat-body"><div class="stat-val" id="s-medical" style="color:var(--red)">0</div><div class="stat-lbl">Medical</div></div>
+    <div class="stat-icon-wrap">🏥</div>
+    <div class="stat-body">
+      <div class="stat-val" id="s-medical" style="color:var(--red)">0</div>
+      <div class="stat-lbl">Medical</div>
+    </div>
   </div>
   <div class="stat-cell trapped">
-    <div class="stat-icon">⚠️</div>
-    <div class="stat-body"><div class="stat-val" id="s-trapped" style="color:var(--orange)">0</div><div class="stat-lbl">Trapped</div></div>
+    <div class="stat-icon-wrap">⚠️</div>
+    <div class="stat-body">
+      <div class="stat-val" id="s-trapped" style="color:var(--orange)">0</div>
+      <div class="stat-lbl">Trapped</div>
+    </div>
   </div>
   <div class="stat-cell safe">
-    <div class="stat-icon">✅</div>
-    <div class="stat-body"><div class="stat-val" id="s-safe" style="color:var(--green)">0</div><div class="stat-lbl">Safe</div></div>
+    <div class="stat-icon-wrap">✅</div>
+    <div class="stat-body">
+      <div class="stat-val" id="s-safe" style="color:var(--green)">0</div>
+      <div class="stat-lbl">Safe</div>
+    </div>
   </div>
 </div>
 
@@ -260,7 +430,7 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, Bl
   <div class="feed-panel">
     <div class="feed-header">
       <div class="feed-title">
-        Live Feed
+        Live Alerts
         <span class="feed-count" id="feed-count">0</span>
       </div>
       <div class="feed-actions">
@@ -270,17 +440,22 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, Bl
 
     <!-- Tunnel URL (shown when tunnel is active) -->
     <div class="tunnel-wrap" id="tunnel-wrap">
-      <div class="tunnel-tag">📱 App Connection URL — copy into app Settings</div>
+      <div class="tunnel-tag">📱 App Connection URL</div>
       <div class="tunnel-url" id="tunnel-url" onclick="copyTunnel(this)">—</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:4px">Tap to copy</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">Click to copy · paste into app Settings</div>
     </div>
 
     <!-- Scrollable cards -->
     <div class="feed-scroll" id="feed">
       <div class="empty-state">
-        <div class="ei">📭</div>
-        <div class="et">No alerts yet</div>
-        <div class="eh">Waiting for phone sync...</div>
+        <span class="empty-icon">📡</span>
+        <div class="empty-title">Awaiting transmissions</div>
+        <div class="empty-sub">MeshAlert phones will sync alerts here<br>when any device gets internet access</div>
+        <div class="empty-dots">
+          <div class="empty-dot"></div>
+          <div class="empty-dot"></div>
+          <div class="empty-dot"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -288,10 +463,14 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, Bl
 
 <!-- Info bar -->
 <div class="info-bar">
-  <div class="ib-item">🆘 <strong id="ib-total">0</strong> alerts</div>
+  <div class="ib-item">🆘 <strong id="ib-total">0</strong> alerts total</div>
+  <div class="ib-sep"></div>
   <div class="ib-item">📍 <strong id="ib-geo">0</strong> with GPS</div>
-  <div class="ib-item" id="ib-last">🕐 —</div>
-  <div class="ib-item" style="margin-left:auto;font-size:11px;color:var(--dim)">Server-Sent Events</div>
+  <div class="ib-sep"></div>
+  <div class="ib-item" id="ib-last">🕐 Waiting for connection...</div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+    <div class="ib-item" style="color:var(--border2)">BLE Mesh · SSE · SQLite</div>
+  </div>
 </div>
 
 <script>
@@ -304,9 +483,7 @@ function authFetch(url, opts) {
   opts.headers = Object.assign({}, opts.headers || {}, { Authorization: 'Bearer ' + token });
   return fetch(url, opts);
 }
-
 function logout() { sessionStorage.clear(); window.location.href = '/login.html'; }
-
 function verifyAuth() {
   authFetch('/api/auth/me').then(function(r) {
     if (!r.ok) { sessionStorage.clear(); window.location.href = '/login.html'; return; }
@@ -319,54 +496,134 @@ function verifyAuth() {
   }).catch(function(){});
 }
 
-// ── Map ────────────────────────────────────────────────────────────────────────
-var map = L.map('map', { attributionControl: true, zoomControl: true }).setView([20, 0], 2);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+// ── Clock ──────────────────────────────────────────────────────────────────────
+function updateClock() {
+  var now = new Date();
+  var h = String(now.getHours()).padStart(2,'0');
+  var m = String(now.getMinutes()).padStart(2,'0');
+  var s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('topbar-clock').textContent = h + ':' + m + ':' + s;
+}
+setInterval(updateClock, 1000); updateClock();
 
-var markers = {};
-
-function markerColor(type) {
-  if (type === 'MEDICAL') return { color: '#FF3B30', emoji: '🏥' };
-  if (type === 'TRAPPED') return { color: '#FF8C00', emoji: '⚠️' };
-  if (type === 'SAFE')    return { color: '#00C853', emoji: '✅' };
-  return { color: '#1E88E5', emoji: '💓' };
+// ── Sound ──────────────────────────────────────────────────────────────────────
+var soundEnabled = true;
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  document.getElementById('sound-btn').textContent = soundEnabled ? '🔔' : '🔕';
+  document.getElementById('sound-btn').title = soundEnabled ? 'Mute alerts' : 'Unmute alerts';
+}
+function playAlertSound(critical) {
+  if (!soundEnabled) return;
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (critical) {
+      // Urgent 3-pulse for MEDICAL SOS
+      [0, 0.15, 0.30].forEach(function(t) {
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(880, ctx.currentTime + t);
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + t + 0.1);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime + t);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.12);
+        osc.start(ctx.currentTime + t);
+        osc.stop(ctx.currentTime + t + 0.12);
+      });
+    } else {
+      // Single soft chime for non-critical
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = 660;
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.start(); osc.stop(ctx.currentTime + 0.4);
+    }
+  } catch(e) {}
 }
 
+// ── Toast notification ─────────────────────────────────────────────────────────
+function showToast(type, senderName, message) {
+  var isCritical = type === 'MEDICAL' || type === 'TRAPPED';
+  var icons = { MEDICAL: '🏥', TRAPPED: '⚠️', SAFE: '✅', HEARTBEAT: '💓' };
+  var labels = { MEDICAL: '🚨 MEDICAL EMERGENCY', TRAPPED: '⚠️ PERSON TRAPPED', SAFE: '✅ SAFE STATUS', HEARTBEAT: '💓 HEARTBEAT' };
+
+  var div = document.createElement('div');
+  div.className = 'toast';
+  if (!isCritical) {
+    div.style.borderColor = type === 'SAFE' ? 'var(--green)' : 'var(--blue)';
+    div.style.boxShadow = 'none';
+  }
+  div.innerHTML =
+    '<div class="toast-icon">' + (icons[type] || '📡') + '</div>'
+    + '<div class="toast-body">'
+    +   '<div class="toast-title">' + (labels[type] || type) + '</div>'
+    +   '<div class="toast-sub">From ' + escHtml(senderName) + (message ? ' — "' + escHtml(message.slice(0,60)) + '"' : '') + '</div>'
+    + '</div>';
+
+  var wrap = document.getElementById('toast-wrap');
+  wrap.appendChild(div);
+  setTimeout(function() {
+    div.classList.add('out');
+    setTimeout(function(){ if (div.parentNode) div.parentNode.removeChild(div); }, 250);
+  }, isCritical ? 5000 : 3000);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Map ────────────────────────────────────────────────────────────────────────
+var map = L.map('map', { attributionControl: true, zoomControl: true }).setView([20, 0], 2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, attribution: '© OpenStreetMap'
+}).addTo(map);
+
+var markers = {};
+function markerColor(type) {
+  if (type === 'MEDICAL') return { color: '#FF3B30', glow: 'rgba(255,59,48,0.4)', emoji: '🏥' };
+  if (type === 'TRAPPED') return { color: '#FF8C00', glow: 'rgba(255,140,0,0.4)', emoji: '⚠️' };
+  if (type === 'SAFE')    return { color: '#00C853', glow: 'rgba(0,200,83,0.4)',   emoji: '✅' };
+  return { color: '#1E88E5', glow: 'rgba(30,136,229,0.4)', emoji: '💓' };
+}
 function addMapMarker(msg) {
   var lat = msg.payload && msg.payload.latitude;
   var lng = msg.payload && msg.payload.longitude;
   if (lat == null || lng == null || (lat === 0 && lng === 0)) return;
   if (markers[msg.messageId]) return;
-
   var type = msg.emergencyType || msg.type || 'SOS';
   var mc   = markerColor(type);
   var time = new Date(msg.timestamp).toLocaleTimeString();
   var hops = Array.isArray(msg.hops) ? msg.hops.length : 0;
 
   var icon = L.divIcon({
-    html: '<div style="width:34px;height:34px;border-radius:50%;background:' + mc.color + ';border:2.5px solid rgba(255,255,255,0.2);box-shadow:0 0 0 4px ' + mc.color + '28,0 4px 14px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:14px;">' + mc.emoji + '</div>',
-    iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -22], className: ''
+    html: '<div style="width:38px;height:38px;border-radius:50%;background:' + mc.color
+      + ';border:2px solid rgba(255,255,255,0.25);box-shadow:0 0 0 6px ' + mc.glow
+      + ',0 4px 16px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;font-size:16px;">'
+      + mc.emoji + '</div>',
+    iconSize: [38,38], iconAnchor: [19,19], popupAnchor: [0,-24], className: ''
   });
 
   var popup = '<b>' + type + '</b>'
-    + '<p>👤 ' + (msg.senderName || 'Unknown') + '</p>'
-    + (msg.payload && msg.payload.bloodGroup ? '<p>🩸 ' + msg.payload.bloodGroup + '</p>' : '')
-    + (msg.payload && msg.payload.message   ? '<p>💬 "' + msg.payload.message + '"</p>' : '')
-    + '<p>🕐 ' + time + ' · ' + hops + ' hops</p>';
+    + '<p>👤 ' + escHtml(msg.senderName || 'Unknown') + '</p>'
+    + (msg.payload && msg.payload.bloodGroup ? '<p>🩸 ' + escHtml(msg.payload.bloodGroup) + '</p>' : '')
+    + (msg.payload && msg.payload.message    ? '<p>💬 "' + escHtml(msg.payload.message) + '"</p>' : '')
+    + '<p>🕐 ' + time + ' · ' + hops + ' hop' + (hops !== 1 ? 's' : '') + '</p>';
 
-  var m = L.marker([lat, lng], { icon: icon }).bindPopup(popup, { maxWidth: 240 }).addTo(map);
+  var m = L.marker([lat, lng], { icon: icon }).bindPopup(popup, { maxWidth: 260 }).addTo(map);
   markers[msg.messageId] = m;
 }
-
 function removeMapMarker(id) {
   if (markers[id]) { map.removeLayer(markers[id]); delete markers[id]; }
 }
-
 function fitMap() {
-  var pts = Object.values ? Object.values(markers).map(function(m){ return m.getLatLng(); })
-    : Object.keys(markers).map(function(k){ return markers[k].getLatLng(); });
+  var pts = [];
+  Object.keys(markers).forEach(function(k) { pts.push(markers[k].getLatLng()); });
   if (pts.length === 0) return;
-  if (pts.length === 1) { map.setView(pts[0], 13); return; }
+  if (pts.length === 1) { map.setView(pts[0], 14); return; }
   map.fitBounds(L.latLngBounds(pts), { padding: [50, 50] });
 }
 
@@ -381,8 +638,22 @@ function fmtAge(ts) {
   return Math.floor(m / 60) + 'h ago';
 }
 
+function animateStat(elId) {
+  var el = document.getElementById(elId);
+  if (!el) return;
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+}
+
 function updateStats() {
   var sos = messages.filter(function(m) { return m.type === 'SOS'; });
+  var prev = {
+    total:   parseInt(document.getElementById('s-total').textContent,   10) || 0,
+    medical: parseInt(document.getElementById('s-medical').textContent, 10) || 0,
+    trapped: parseInt(document.getElementById('s-trapped').textContent, 10) || 0,
+    safe:    parseInt(document.getElementById('s-safe').textContent,    10) || 0,
+  };
   document.getElementById('s-total').textContent   = sos.length;
   document.getElementById('s-medical').textContent = sos.filter(function(m){ return m.emergencyType === 'MEDICAL'; }).length;
   document.getElementById('s-trapped').textContent = sos.filter(function(m){ return m.emergencyType === 'TRAPPED'; }).length;
@@ -390,32 +661,62 @@ function updateStats() {
   document.getElementById('ib-total').textContent  = sos.length;
   document.getElementById('ib-geo').textContent    = sos.filter(function(m){ return m.payload && m.payload.latitude && !(m.payload.latitude === 0 && m.payload.longitude === 0); }).length;
   document.getElementById('feed-count').textContent = messages.length;
+  // Animate changed stats
+  if (sos.length !== prev.total)   animateStat('s-total');
+  if (sos.filter(function(m){ return m.emergencyType === 'MEDICAL'; }).length !== prev.medical) animateStat('s-medical');
+  if (sos.filter(function(m){ return m.emergencyType === 'TRAPPED'; }).length !== prev.trapped) animateStat('s-trapped');
+  if (sos.filter(function(m){ return m.emergencyType === 'SAFE'; }).length !== prev.safe)    animateStat('s-safe');
 }
 
 function makeCard(msg) {
-  var type = msg.emergencyType || msg.type || 'SOS';
+  var type   = msg.emergencyType || msg.type || 'SOS';
   var hasGps = msg.payload && msg.payload.latitude && !(msg.payload.latitude === 0 && msg.payload.longitude === 0);
   var hops   = Array.isArray(msg.hops) ? msg.hops.length : 0;
+  var hasMedical = msg.payload && (msg.payload.medicalConditions || msg.payload.allergies || msg.payload.emergencyContacts);
+
+  var typeLabels = { MEDICAL: '🏥 Medical', TRAPPED: '⚠️ Trapped', SAFE: '✅ Safe', HEARTBEAT: '💓 Heartbeat', SOS: '🆘 SOS' };
 
   var div = document.createElement('div');
   div.className = 'alert-card ' + type;
   div.id = 'card-' + msg.messageId;
   div.innerHTML =
-    '<div class="ac-row">'
-      + '<span class="ac-type ' + type + '">' + (type === 'HEARTBEAT' ? '💓 HEARTBEAT' : '🆘 ' + type) + '</span>'
-      + '<div class="ac-right"><span class="ac-age">' + fmtAge(msg.timestamp) + '</span><button class="ac-del" onclick="deleteAlert(\'' + msg.messageId + '\')">✕</button></div>'
+    '<div class="ac-header">'
+      + '<div class="ac-type-row">'
+      +   '<span class="ac-type-badge ' + type + '">' + (typeLabels[type] || type) + '</span>'
+      + '</div>'
+      + '<div class="ac-right">'
+      +   '<span class="ac-age" data-ts="' + msg.timestamp + '">' + fmtAge(msg.timestamp) + '</span>'
+      +   '<button class="ac-del" onclick="deleteAlert(\'' + msg.messageId + '\')" title="Delete">✕</button>'
+      + '</div>'
     + '</div>'
-    + '<div class="ac-name">' + (msg.senderName || 'Unknown') + '</div>'
-    + (hasGps ? '<div class="ac-coords">📍 ' + msg.payload.latitude.toFixed(4) + ', ' + msg.payload.longitude.toFixed(4) + '</div>' : '')
-    + (msg.payload && msg.payload.message ? '<div class="ac-msg">"' + msg.payload.message + '"</div>' : '')
+    + '<div class="ac-name">' + escHtml(msg.senderName || 'Unknown') + '</div>'
+    + (hasGps
+      ? '<div class="ac-coords">📍 ' + msg.payload.latitude.toFixed(5) + ', ' + msg.payload.longitude.toFixed(5) + '</div>'
+      : '')
+    + (msg.payload && msg.payload.message
+      ? '<div class="ac-msg">' + escHtml(msg.payload.message) + '</div>'
+      : '')
+    + (msg.payload && msg.payload.audioBase64
+      ? '<audio controls src="data:audio/mp4;base64,' + msg.payload.audioBase64 + '"></audio>'
+      : '')
+    + (hasMedical
+      ? '<div class="ac-medical">'
+        + (msg.payload.medicalConditions ? '<div class="ac-medical-item">⚕️ ' + escHtml(msg.payload.medicalConditions) + '</div>' : '')
+        + (msg.payload.allergies         ? '<div class="ac-medical-item">⚠️ Allergies: ' + escHtml(msg.payload.allergies) + '</div>' : '')
+        + (msg.payload.emergencyContacts ? '<div class="ac-medical-item">📞 ' + escHtml(Array.isArray(msg.payload.emergencyContacts) ? msg.payload.emergencyContacts.join(', ') : msg.payload.emergencyContacts) + '</div>' : '')
+        + '</div>'
+      : '')
     + '<div class="ac-meta">'
-      + '<span class="ac-badge">' + hops + ' hops</span>'
+      + (msg.payload && msg.payload.bloodGroup
+        ? '<span class="ac-badge blood">🩸 ' + escHtml(msg.payload.bloodGroup) + '</span>' : '')
+      + '<span class="ac-badge">' + hops + ' hop' + (hops !== 1 ? 's' : '') + '</span>'
       + '<span class="ac-badge">TTL ' + (msg.ttl || '?') + '</span>'
-      + (hasGps && markers[msg.messageId] ? '<span class="ac-pin">📍 On map</span>' : '')
+      + (msg.synced ? '<span class="ac-badge synced">✅ synced</span>' : '')
     + '</div>';
 
   div.addEventListener('click', function(e) {
-    if (e.target.classList.contains('ac-del')) return;
+    if (e.target.classList.contains('ac-del') || e.target.tagName === 'BUTTON') return;
+    if (e.target.tagName === 'AUDIO') return;
     var m = markers[msg.messageId];
     if (m) { map.setView(m.getLatLng(), 14); m.openPopup(); }
   });
@@ -425,7 +726,12 @@ function makeCard(msg) {
 function renderFeed() {
   var feed = document.getElementById('feed');
   if (messages.length === 0) {
-    feed.innerHTML = '<div class="empty-state"><div class="ei">📭</div><div class="et">No alerts yet</div><div class="eh">Waiting for phone sync...</div></div>';
+    feed.innerHTML = '<div class="empty-state">'
+      + '<span class="empty-icon">📡</span>'
+      + '<div class="empty-title">Awaiting transmissions</div>'
+      + '<div class="empty-sub">MeshAlert phones will sync alerts here<br>when any device gets internet access</div>'
+      + '<div class="empty-dots"><div class="empty-dot"></div><div class="empty-dot"></div><div class="empty-dot"></div></div>'
+      + '</div>';
     return;
   }
   feed.innerHTML = '';
@@ -439,12 +745,11 @@ function deleteAlert(id) {
     messages = messages.filter(function(m) { return m.messageId !== id; });
     removeMapMarker(id);
     var card = document.getElementById('card-' + id);
-    if (card) card.remove();
+    if (card) { card.style.animation = 'toastOut 0.2s ease both'; setTimeout(function(){ card.remove(); }, 200); }
     updateStats();
     if (messages.length === 0) renderFeed();
   });
 }
-
 function deleteAll() {
   if (!confirm('Delete all alerts from the dashboard?')) return;
   authFetch('/api/sos', { method: 'DELETE' }).then(function(r) {
@@ -454,11 +759,9 @@ function deleteAll() {
     updateStats(); renderFeed();
   });
 }
-
 function exportCsv() {
   window.location.href = '/api/sos/export?_token=' + encodeURIComponent(token);
 }
-
 function copyTunnel(el) {
   navigator.clipboard.writeText(el.textContent).then(function() {
     el.style.color = 'var(--green)';
@@ -469,16 +772,17 @@ function copyTunnel(el) {
 // ── SSE ────────────────────────────────────────────────────────────────────────
 function connect() {
   var pill = document.getElementById('conn-pill');
-  var es   = new EventSource('/api/events?_token=' + encodeURIComponent(token));
+  var connText = document.getElementById('conn-text');
+  var es = new EventSource('/api/events?_token=' + encodeURIComponent(token));
 
   es.addEventListener('init', function(e) {
     messages = JSON.parse(e.data);
     messages.forEach(addMapMarker);
-    if (messages.length > 0) fitMap();
+    if (messages.length > 0) setTimeout(fitMap, 300);
     updateStats(); renderFeed();
-    pill.textContent = '⬤ Connected';
     pill.className = 'pill pill-conn ok';
-    document.getElementById('ib-last').textContent = '🕐 Connected ' + new Date().toLocaleTimeString();
+    connText.textContent = 'Connected';
+    document.getElementById('ib-last').innerHTML = '🕐 Connected at ' + new Date().toLocaleTimeString();
   });
 
   es.addEventListener('sos', function(e) {
@@ -486,17 +790,34 @@ function connect() {
     if (messages.find(function(m){ return m.messageId === msg.messageId; })) return;
     messages.unshift(msg);
     addMapMarker(msg);
-    if (msg.payload && msg.payload.latitude) map.setView([msg.payload.latitude, msg.payload.longitude], 13);
+    if (msg.payload && msg.payload.latitude && !(msg.payload.latitude === 0 && msg.payload.longitude === 0)) {
+      map.flyTo([msg.payload.latitude, msg.payload.longitude], 13, { duration: 1.2 });
+    }
     updateStats();
 
     var feed = document.getElementById('feed');
     if (feed.querySelector('.empty-state')) feed.innerHTML = '';
     var card = makeCard(msg);
-    card.classList.add('new-flash');
-    setTimeout(function(){ card.classList.remove('new-flash'); }, 2000);
+    var type = msg.emergencyType || msg.type;
+    if (type === 'MEDICAL' || type === 'TRAPPED') {
+      card.classList.add('critical-flash');
+    }
     feed.prepend(card);
     document.getElementById('feed-count').textContent = messages.length;
-    document.getElementById('ib-last').textContent = '🕐 Last alert ' + new Date().toLocaleTimeString();
+    document.getElementById('ib-last').innerHTML = '🕐 Last alert <strong>' + fmtAge(msg.timestamp) + '</strong>';
+
+    // Notifications
+    var isCritical = type === 'MEDICAL' || type === 'TRAPPED';
+    playAlertSound(isCritical);
+    showToast(type, msg.senderName, msg.payload && msg.payload.message);
+
+    // Browser notification
+    if (isCritical && Notification && Notification.permission === 'granted') {
+      new Notification('🚨 MeshAlert: ' + (type === 'MEDICAL' ? 'MEDICAL EMERGENCY' : 'PERSON TRAPPED'), {
+        body: 'From: ' + (msg.senderName || 'Unknown') + (msg.payload && msg.payload.message ? '\n"' + msg.payload.message + '"' : ''),
+        tag: msg.messageId,
+      });
+    }
   });
 
   es.addEventListener('delete', function(e) {
@@ -524,23 +845,23 @@ function connect() {
   });
 
   es.onerror = function() {
-    pill.textContent = '⬤ Reconnecting...';
     pill.className = 'pill pill-conn';
+    connText.textContent = 'Reconnecting...';
     setTimeout(function(){ es.close(); connect(); }, 4000);
   };
 }
 
 // ── Age refresh ────────────────────────────────────────────────────────────────
 setInterval(function() {
-  messages.forEach(function(msg, i) {
-    var card = document.getElementById('card-' + msg.messageId);
-    if (card) {
-      var age = card.querySelector('.ac-age');
-      if (age) age.textContent = fmtAge(msg.timestamp);
-    }
+  document.querySelectorAll('.ac-age[data-ts]').forEach(function(el) {
+    el.textContent = fmtAge(parseInt(el.getAttribute('data-ts'), 10));
   });
-}, 30000);
+}, 20000);
 
+// ── Init ───────────────────────────────────────────────────────────────────────
+if (Notification && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
 verifyAuth();
 connect();
 </script>

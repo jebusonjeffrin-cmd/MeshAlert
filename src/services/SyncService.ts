@@ -36,7 +36,9 @@ class SyncService {
     let url = input.trim().replace(/\/$/, '');
     // If user entered a bare IP (no scheme), add http:// and port
     if (url && !url.includes('://')) {
-      url = `http://${url}:${LOCAL_PORT}`;
+      // Only add port if the user didn't already specify one (e.g. 192.168.1.5:8080)
+      const hasPort = /:\d+$/.test(url);
+      url = `http://${url}${hasPort ? '' : `:${LOCAL_PORT}`}`;
     }
     this.dashboardURL = url;
     await AsyncStorage.setItem(DASHBOARD_URL_KEY, url);

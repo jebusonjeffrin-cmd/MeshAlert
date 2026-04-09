@@ -4,16 +4,33 @@ import {
 } from 'react-native';
 import WebView from 'react-native-webview';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import RNFS from 'react-native-fs';
 import { storageService } from '../services/StorageService';
 import { nearbyService } from '../services/NearbyService';
+import { meshService } from '../services/MeshService';
 import { locationService } from '../services/LocationService';
-import { MeshMessage, PeerDevice } from '../types';
+import { MeshMessage, PeerDevice, Location } from '../types';
 import { COLORS } from '../utils/constants';
 import { LEAFLET_CSS, LEAFLET_JS } from '../utils/leafletAssets';
 
 type Tab = 'map' | 'alerts' | 'peers';
 
-function buildMapHtml(myLat: number, myLng: number, alerts: MeshMessage[], peers: PeerDevice[]): string {
+function latLngToTile(lat: number, lng: number, z: number): { x: number; y: number } {
+  const n = Math.pow(2, z);
+  const x = Math.floor(((lng + 180) / 360) * n);
+  const y = Math.floor(
+    (1 - Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) / 2 * n,
+  );
+  return { x, y };
+}
+
+function buildMapHtml(
+  myLat: number,
+  myLng: number,
+  alerts: MeshMessage[],
+  peers: PeerDevice[],
+  tilesDir: string,
+): string {
   const alertMarkers = alerts
     .filter(m => m.payload.latitude && m.payload.longitude)
     .map(m => {
@@ -51,9 +68,26 @@ function buildMapHtml(myLat: number, myLng: number, alerts: MeshMessage[], peers
   const map = L.map('map', {zoomControl:true, attributionControl:false})
     .setView([${myLat},${myLng}], 15);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom:19, opacity:0.85
-  }).addTo(map);
+  // Custom tile layer: checks local file cache first, falls back to OSM
+  const tilesDir = '${tilesDir}';
+  const OfflineTileLayer = L.TileLayer.extend({
+    createTile(coords, done) {
+      const img = document.createElement('img');
+      img.crossOrigin = 'anonymous';
+      const filePath = 'file://' + tilesDir + '/osm-tiles/' + coords.z + '/' + coords.x + '/' + coords.y + '.png';
+      img.onload = () => done(null, img);
+      img.onerror = () => {
+        const s = ['a','b','c'][Math.floor(Math.random()*3)];
+        const onlineUrl = 'https://' + s + '.tile.openstreetmap.org/' + coords.z + '/' + coords.x + '/' + coords.y + '.png';
+        img.src = onlineUrl;
+        img.onload = () => done(null, img);
+        img.onerror = () => done(new Error('tile failed'), img);
+      };
+      img.src = filePath;
+      return img;
+    }
+  });
+  new OfflineTileLayer('', { maxZoom: 19, opacity: 0.85 }).addTo(map);
 
   // My location — blue pulsing dot
   const myIcon = L.divIcon({
@@ -93,7 +127,9 @@ export const MapScreen: React.FC = () => {
   const [messages, setMessages] = useState<MeshMessage[]>([]);
   const [peers, setPeers] = useState<PeerDevice[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [myLocation, setMyLocation] = useState(locationService.getLastLocation());
+  const [myLocation, setMyLocation] = useState<Location | null>(locationService.getLastLocation());
+  const [saving, setSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState<string | null>(null);
   const webViewRef = useRef<any>(null);
 
   const loadData = useCallback(async () => {
@@ -134,9 +170,61 @@ export const MapScreen: React.FC = () => {
     ]);
   }, []);
 
+  const handleSaveArea = useCallback(async () => {
+    const loc = myLocation ?? locationService.getLastLocation();
+    if (!loc) {
+      Alert.alert('No location', 'GPS needed to save the map area for offline use.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const baseDir = `${RNFS.DocumentDirectoryPath}/osm-tiles`;
+      const tasks: Array<{ z: number; x: number; y: number }> = [];
+
+      for (const [z, radius] of [[13, 3], [14, 6], [15, 12]] as [number, number][]) {
+        const center = latLngToTile(loc.latitude, loc.longitude, z);
+        for (let dx = -radius; dx <= radius; dx++) {
+          for (let dy = -radius; dy <= radius; dy++) {
+            tasks.push({ z, x: center.x + dx, y: center.y + dy });
+          }
+        }
+      }
+
+      const total = tasks.length;
+      setSaveProgress(`0 / ${total}`);
+
+      let downloaded = 0;
+      for (const { z, x, y } of tasks) {
+        const dir = `${baseDir}/${z}/${x}`;
+        const dest = `${dir}/${y}.png`;
+        const exists = await RNFS.exists(dest);
+        if (!exists) {
+          await RNFS.mkdir(dir);
+          const s = ['a', 'b', 'c'][Math.floor(Math.random() * 3)];
+          await RNFS.downloadFile({
+            fromUrl: `https://${s}.tile.openstreetmap.org/${z}/${x}/${y}.png`,
+            toFile: dest,
+            headers: { 'User-Agent': 'MeshAlert/1.0' },
+          }).promise.catch(() => {});
+        }
+        downloaded++;
+        if (downloaded % 20 === 0) setSaveProgress(`${downloaded} / ${total}`);
+      }
+
+      setSaveProgress(null);
+      Alert.alert('Map saved', `${total} tiles cached. Map will work offline in this area.`);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Could not save map area');
+    } finally {
+      setSaving(false);
+      setSaveProgress(null);
+    }
+  }, [myLocation]);
+
   const lat = myLocation?.latitude ?? 12.9716;
   const lng = myLocation?.longitude ?? 77.5946;
-  const mapHtml = buildMapHtml(lat, lng, messages, peers);
+  const tilesDir = RNFS.DocumentDirectoryPath;
+  const mapHtml = buildMapHtml(lat, lng, messages, peers, tilesDir);
 
   return (
     <View style={styles.screen}>
@@ -161,17 +249,32 @@ export const MapScreen: React.FC = () => {
       </View>
 
       {tab === 'map' && (
-        <WebView
-          ref={webViewRef}
-          source={{ html: mapHtml, baseUrl: 'https://openstreetmap.org' }}
-          style={styles.map}
-          javaScriptEnabled
-          domStorageEnabled
-          geolocationEnabled
-          originWhitelist={['*']}
-          mixedContentMode="always"
-          onError={e => console.warn('[Map] WebView error:', e.nativeEvent.description)}
-        />
+        <View style={{ flex: 1 }}>
+          <View style={styles.mapToolbar}>
+            <TouchableOpacity
+              style={[styles.saveMapBtn, saving && styles.saveMapBtnDisabled]}
+              onPress={handleSaveArea}
+              disabled={saving}
+            >
+              <Text style={styles.saveMapText}>
+                {saveProgress ? `⬇ ${saveProgress}` : saving ? 'Saving...' : '⬇ Save Area'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <WebView
+            ref={webViewRef}
+            source={{ html: mapHtml, baseUrl: 'https://openstreetmap.org' }}
+            style={styles.map}
+            javaScriptEnabled
+            domStorageEnabled
+            geolocationEnabled
+            originWhitelist={['*']}
+            mixedContentMode="always"
+            allowFileAccess={true}
+            allowUniversalAccessFromFileURLs={true}
+            onError={e => console.warn('[Map] WebView error:', e.nativeEvent.description)}
+          />
+        </View>
       )}
 
       {tab === 'alerts' && (
@@ -214,6 +317,7 @@ const AlertCard: React.FC<{ msg: MeshMessage; onDelete: (id: string) => void }> 
   const typeColor = msg.emergencyType === 'MEDICAL' ? COLORS.medical
     : msg.emergencyType === 'TRAPPED' ? COLORS.trapped : COLORS.safe;
   const [isPlaying, setIsPlaying] = useState(false);
+  const [ackSent, setAckSent] = useState(false);
 
   const handlePlayAudio = async () => {
     if (!msg.payload.audioBase64) return;
@@ -223,7 +327,6 @@ const AlertCard: React.FC<{ msg: MeshMessage; onDelete: (id: string) => void }> 
       return;
     }
     try {
-      // Write base64 to temp file via ServiceModule, then play
       const filePath: string = await NativeModules.ServiceModule.writeBase64ToTempFile(
         msg.payload.audioBase64, 'aac'
       );
@@ -239,6 +342,16 @@ const AlertCard: React.FC<{ msg: MeshMessage; onDelete: (id: string) => void }> 
     } catch (e) {
       console.warn('[Voice] Playback failed:', e);
       setIsPlaying(false);
+    }
+  };
+
+  const handleACK = async () => {
+    if (ackSent) return;
+    try {
+      await meshService.sendACK(msg.messageId, msg.senderName);
+      setAckSent(true);
+    } catch (e) {
+      console.warn('[ACK] Send failed:', e);
     }
   };
 
@@ -269,6 +382,15 @@ const AlertCard: React.FC<{ msg: MeshMessage; onDelete: (id: string) => void }> 
           <Text style={styles.playBtnText}>{isPlaying ? '⏹ Stop' : '▶ Play Voice Note'}</Text>
         </TouchableOpacity>
       )}
+      <TouchableOpacity
+        style={[styles.ackBtn, ackSent && styles.ackBtnSent]}
+        onPress={handleACK}
+        disabled={ackSent}
+      >
+        <Text style={[styles.ackBtnText, ackSent && styles.ackBtnTextSent]}>
+          {ackSent ? '✅ Help sent' : "🚨 I'm coming"}
+        </Text>
+      </TouchableOpacity>
       <Text style={styles.cardHops}>{msg.hops.length} hop{msg.hops.length !== 1 ? 's' : ''} · TTL {msg.ttl} {msg.synced ? '· ✅' : ''}</Text>
     </View>
   );
@@ -323,6 +445,18 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomWidth: 2, borderBottomColor: COLORS.sos },
   tabText: { fontSize: 12, fontWeight: '600', color: COLORS.textMuted },
   tabTextActive: { color: COLORS.text },
+  mapToolbar: {
+    paddingHorizontal: 12, paddingVertical: 8,
+    backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    flexDirection: 'row', justifyContent: 'flex-end',
+  },
+  saveMapBtn: {
+    paddingHorizontal: 14, paddingVertical: 7,
+    backgroundColor: 'rgba(30,136,229,0.12)', borderRadius: 8,
+    borderWidth: 1, borderColor: COLORS.peer,
+  },
+  saveMapBtnDisabled: { opacity: 0.5 },
+  saveMapText: { fontSize: 12, color: COLORS.peer, fontWeight: '700' },
   map: { flex: 1 },
   list: { flex: 1 },
   empty: { alignItems: 'center', paddingTop: 80, gap: 8 },
@@ -350,4 +484,12 @@ const styles = StyleSheet.create({
     borderRadius: 8, borderWidth: 1, borderColor: COLORS.peer, alignItems: 'center',
   },
   playBtnText: { fontSize: 12, color: COLORS.peer, fontWeight: '700' },
+  ackBtn: {
+    marginTop: 6, padding: 10,
+    backgroundColor: 'rgba(255,59,48,0.12)',
+    borderRadius: 8, borderWidth: 1, borderColor: COLORS.sos, alignItems: 'center',
+  },
+  ackBtnSent: { backgroundColor: 'rgba(67,160,71,0.12)', borderColor: COLORS.safe },
+  ackBtnText: { fontSize: 13, color: COLORS.sos, fontWeight: '800' },
+  ackBtnTextSent: { color: COLORS.safe },
 });
